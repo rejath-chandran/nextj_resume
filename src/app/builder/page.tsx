@@ -16,6 +16,10 @@ import {
   Check,
   Eye,
   X,
+  FileText,
+  CheckCircle2,
+  ExternalLink,
+  ChevronRight
 } from "lucide-react";
 
 import { FadeIn, GlowCard, Magnetic, ProgressRing, StepPanel } from "@/components/builder/animated";
@@ -224,52 +228,58 @@ export default function BuilderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-[#FAFAFA]/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-violet-100 selection:text-violet-900">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md shadow-xs transition-all">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold text-gray-900">
-                {personal.fullName ? `${personal.fullName}'s resume` : "Untitled resume"}
+            <div>
+              <p className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                {personal.fullName ? `${personal.fullName}'s Resume` : "Resume Builder"}
               </p>
-              <p className="text-xs text-gray-400">Autosaved to this browser</p>
+              <p className="text-[11px] sm:text-xs text-slate-400 font-medium hidden sm:block">
+                Auto-saved in real time
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 sm:flex">
-              <ProgressRing progress={completion} size={28} strokeWidth={3} />
-              <span className="text-xs font-medium text-gray-500">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="hidden items-center gap-2.5 sm:flex bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200/60">
+              <ProgressRing progress={completion} size={24} strokeWidth={3} />
+              <span className="text-xs font-semibold text-slate-700">
                 {Math.round(completion * 100)}% complete
               </span>
             </div>
 
             <GhostButton
-              className="lg:hidden"
+              className="lg:hidden shadow-2xs"
               onClick={() => setShowPreviewMobile((v) => !v)}
             >
-              {showPreviewMobile ? <X className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {showPreviewMobile ? "Close preview" : "Preview"}
+              {showPreviewMobile ? <X className="h-4 w-4" /> : <Eye className="h-4 w-4 text-violet-600" />}
+              <span>{showPreviewMobile ? "Close" : "Preview"}</span>
             </GhostButton>
 
-            <Magnetic strength={0.25}>
-              <PrimaryButton onClick={() => window.print()}>
-                <Download className="h-3.5 w-3.5" />
-                Export PDF
+            <Magnetic strength={0.2}>
+              <PrimaryButton 
+                onClick={() => window.print()} 
+                className="bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-500/20"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export PDF</span>
+                <span className="sm:hidden">Export</span>
               </PrimaryButton>
             </Magnetic>
           </div>
         </div>
 
-        {/* Step rail — horizontal on mobile */}
-        <div className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-4 pb-3 sm:px-6 lg:hidden">
+        {/* Mobile Horizontal Step Chips */}
+        <div className="mx-auto flex max-w-[1600px] gap-1.5 overflow-x-auto px-4 pb-3 pt-1 sm:px-6 lg:hidden scrollbar-none">
           {STEPS.map((step, i) => (
             <StepChip
               key={step.key}
@@ -283,25 +293,46 @@ export default function BuilderPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[220px_1fr_420px] lg:px-8">
-        {/* Desktop step rail */}
+      {/* Main Container - 3 Column Layout */}
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 sm:gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[230px_1fr_420px] xl:grid-cols-[250px_1fr_460px] lg:px-8">
+        
+        {/* Desktop Left Step Navigation Rail */}
         <nav className="hidden lg:block">
-          <ol className="sticky top-24 space-y-1">
-            {STEPS.map((step, i) => (
-              <li key={step.key}>
-                <StepRailItem
-                  step={step}
-                  index={i}
-                  active={i === stepIndex}
-                  done={stepIsComplete(step.key)}
-                  onClick={() => goTo(i)}
+          <div className="sticky top-24 space-y-4">
+            <div className="px-3">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Sections</span>
+            </div>
+            <ol className="space-y-1">
+              {STEPS.map((step, i) => (
+                <li key={step.key}>
+                  <StepRailItem
+                    step={step}
+                    index={i}
+                    active={i === stepIndex}
+                    done={stepIsComplete(step.key)}
+                    onClick={() => goTo(i)}
+                  />
+                </li>
+              ))}
+            </ol>
+
+            {/* Overall Progress Widget */}
+            <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
+                <span>Resume Progress</span>
+                <span className="text-violet-600 font-bold">{Math.round(completion * 100)}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div 
+                  className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all duration-500 ease-out" 
+                  style={{ width: `${completion * 100}%` }}
                 />
-              </li>
-            ))}
-          </ol>
+              </div>
+            </div>
+          </div>
         </nav>
 
-        {/* Form panel */}
+        {/* Center Main Form Panel */}
         <main className="min-w-0">
           <StepPanel activeKey={activeStep.key} direction={direction}>
             {activeStep.key === "personal" && (
@@ -324,32 +355,40 @@ export default function BuilderPage() {
             )}
           </StepPanel>
 
-          {/* Step navigation */}
-          <div className="mt-8 flex items-center justify-between border-t border-black/[0.06] pt-6">
+          {/* Footer Navigation Buttons */}
+          <div className="mt-8 flex items-center justify-between border-t border-slate-200/80 pt-6">
             <GhostButton
               onClick={() => goTo(Math.max(0, stepIndex - 1))}
               disabled={stepIndex === 0}
               className="disabled:pointer-events-none disabled:opacity-0"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
             </GhostButton>
             {stepIndex < STEPS.length - 1 ? (
-              <PrimaryButton onClick={() => goTo(stepIndex + 1)}>
-                Next: {STEPS[stepIndex + 1].label}
+              <PrimaryButton onClick={() => goTo(stepIndex + 1)} className="bg-violet-600 hover:bg-violet-700">
+                <span>Next: {STEPS[stepIndex + 1].label}</span>
+                <ChevronRight className="h-4 w-4" />
               </PrimaryButton>
             ) : (
-              <PrimaryButton onClick={() => window.print()}>
-                <Download className="h-3.5 w-3.5" />
-                Export PDF
+              <PrimaryButton onClick={() => window.print()} className="bg-violet-600 hover:bg-violet-700">
+                <Download className="h-4 w-4" />
+                <span>Export Final PDF</span>
               </PrimaryButton>
             )}
           </div>
         </main>
 
-        {/* Live preview — desktop */}
+        {/* Right Sticky Desktop Live Preview Panel */}
         <aside className="hidden lg:block">
           <div className="sticky top-24">
+            <div className="mb-2.5 flex items-center justify-between px-1">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Preview
+              </span>
+              <span className="text-[11px] font-medium text-slate-400">PDF Ready</span>
+            </div>
             <ResumePreview
               personal={personal}
               experience={experience}
@@ -362,24 +401,34 @@ export default function BuilderPage() {
         </aside>
       </div>
 
-      {/* Live preview — mobile drawer */}
+      {/* Mobile Live Preview Full Screen Drawer */}
       {showPreviewMobile && (
-        <div className="fixed inset-0 z-40 overflow-y-auto bg-[#FAFAFA] p-4 lg:hidden">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-900">Preview</p>
-            <GhostButton onClick={() => setShowPreviewMobile(false)}>
-              <X className="h-3.5 w-3.5" />
-              Close
-            </GhostButton>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4 lg:hidden flex justify-center items-start">
+          <div className="w-full max-w-lg bg-white rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-violet-600" />
+                <p className="text-sm font-bold text-slate-900">Live Resume Preview</p>
+              </div>
+              <GhostButton onClick={() => setShowPreviewMobile(false)} className="h-8 w-8 p-0 rounded-full">
+                <X className="h-4 w-4" />
+              </GhostButton>
+            </div>
+            <ResumePreview
+              personal={personal}
+              experience={experience}
+              education={education}
+              skills={skills}
+              projects={projects}
+              certifications={certifications}
+            />
+            <div className="pt-2">
+              <PrimaryButton onClick={() => window.print()} className="w-full bg-violet-600 hover:bg-violet-700">
+                <Download className="h-4 w-4" />
+                Download PDF
+              </PrimaryButton>
+            </div>
           </div>
-          <ResumePreview
-            personal={personal}
-            experience={experience}
-            education={education}
-            skills={skills}
-            projects={projects}
-            certifications={certifications}
-          />
         </div>
       )}
     </div>
@@ -406,24 +455,26 @@ function StepRailItem({
     <button
       onClick={onClick}
       className={
-        "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition " +
-        (active ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900")
+        "group flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-all duration-200 " +
+        (active
+          ? "bg-slate-900 text-white shadow-md shadow-slate-900/10 font-semibold"
+          : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium")
       }
     >
       <span
         className={
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition " +
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-all " +
           (active
-            ? "bg-white/15 text-white"
+            ? "bg-white/20 text-white"
             : done
-            ? "bg-[#8B5CF6]/10 text-[#8B5CF6]"
-            : "bg-gray-100 text-gray-400 group-hover:bg-gray-200")
+            ? "bg-violet-100 text-violet-700"
+            : "bg-slate-100 text-slate-400 group-hover:bg-slate-200")
         }
       >
-        {done && !active ? <Check className="h-3.5 w-3.5" /> : index + 1}
+        {done && !active ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : index + 1}
       </span>
-      <span className="flex items-center gap-2 text-sm font-medium">
-        <Icon className="h-3.5 w-3.5 opacity-70" />
+      <span className="flex items-center gap-2 text-xs sm:text-sm">
+        <Icon className="h-4 w-4 opacity-80" />
         {step.label}
       </span>
     </button>
@@ -447,32 +498,32 @@ function StepChip({
     <button
       onClick={onClick}
       className={
-        "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition " +
+        "flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all " +
         (active
-          ? "border-gray-900 bg-gray-900 text-white"
-          : "border-gray-200 bg-white text-gray-500")
+          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
       }
     >
       <span
         className={
-          "flex h-4 w-4 items-center justify-center rounded-full text-[10px] " +
-          (active ? "bg-white/20" : done ? "bg-[#8B5CF6]/10 text-[#8B5CF6]" : "bg-gray-100")
+          "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold " +
+          (active ? "bg-white/20" : done ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-400")
         }
       >
-        {done && !active ? <Check className="h-2.5 w-2.5" /> : index + 1}
+        {done && !active ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : index + 1}
       </span>
       {step.label}
     </button>
   );
 }
 
-/* ---------------------------------- Steps ---------------------------------- */
+/* ---------------------------------- Step Forms ---------------------------------- */
 
 function StepHeading({ title, hint }: { title: string; hint: string }) {
   return (
     <FadeIn>
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{title}</h1>
-      <p className="mt-1 text-sm text-gray-500">{hint}</p>
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+      <p className="mt-1 text-xs sm:text-sm text-slate-500 font-normal">{hint}</p>
     </FadeIn>
   );
 }
@@ -488,50 +539,50 @@ function PersonalStep({
     onChange({ ...value, [key]: v });
 
   return (
-    <div>
-      <StepHeading title="Let's start with you" hint="This appears at the top of your resume template." />
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Let's start with your details" hint="This information will form the header of your resume." />
       <FadeIn delay={0.05} className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Full name">
+        <Field label="Full Name *">
           <TextInput
-            placeholder="Jordan Rivera"
+            placeholder="e.g. Alex Johnson"
             value={value.fullName}
             onChange={(e) => set("fullName", e.target.value)}
           />
         </Field>
-        <Field label="Title">
+        <Field label="Professional Title *">
           <TextInput
-            placeholder="Product Designer"
+            placeholder="e.g. Senior Software Engineer"
             value={value.title}
             onChange={(e) => set("title", e.target.value)}
           />
         </Field>
-        <Field label="Email">
+        <Field label="Email Address *">
           <TextInput
             type="email"
-            placeholder="jordan@email.com"
+            placeholder="alex.johnson@example.com"
             value={value.email}
             onChange={(e) => set("email", e.target.value)}
           />
         </Field>
-        <Field label="Phone">
+        <Field label="Phone Number">
           <TextInput
-            placeholder="+1 (555) 010-0199"
+            placeholder="+1 (555) 234-5678"
             value={value.phone}
             onChange={(e) => set("phone", e.target.value)}
           />
         </Field>
-        <Field label="Location" hint="City, country">
+        <Field label="Location" hint="City, Country">
           <TextInput
-            placeholder="Lisbon, Portugal"
+            placeholder="San Francisco, CA"
             value={value.location}
             onChange={(e) => set("location", e.target.value)}
           />
         </Field>
         <div className="sm:col-span-2">
-          <Field label="Summary" hint="2–3 sentences">
+          <Field label="Professional Summary" hint="2–4 sentences describing your background">
             <TextArea
               rows={4}
-              placeholder="A brief line on what you do and what you're looking for next."
+              placeholder="Results-driven professional with 5+ years of experience in..."
               value={value.summary}
               onChange={(e) => set("summary", e.target.value)}
             />
@@ -585,48 +636,48 @@ function ExperienceStep({
   };
 
   return (
-    <div>
-      <StepHeading title="Work experience" hint="Add roles in reverse chronological order." />
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Work Experience" hint="Highlight your roles, achievements, and impact." />
       <div className="mt-6 space-y-4">
         {items.map((item, i) => (
           <FadeIn key={item.id} delay={i * 0.04}>
-            <GlowCard className="p-5">
+            <GlowCard className="p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                  Role {i + 1}
-                </p>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Position {i + 1}
+                </span>
                 <DangerGhostButton onClick={() => remove(item.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
-                  Remove
+                  <span>Remove</span>
                 </DangerGhostButton>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Role">
+                <Field label="Job Title">
                   <TextInput
-                    placeholder="Senior Product Designer"
+                    placeholder="Senior Frontend Developer"
                     value={item.role}
                     onChange={(e) => update(item.id, { role: e.target.value })}
                   />
                 </Field>
-                <Field label="Company">
+                <Field label="Company / Organization">
                   <TextInput
-                    placeholder="Acme Inc."
+                    placeholder="TechCorp Inc."
                     value={item.company}
                     onChange={(e) => update(item.id, { company: e.target.value })}
                   />
                 </Field>
-                <Field label="Period" hint="e.g. 2022 — Present">
+                <Field label="Dates / Period" hint="e.g. 2021 — Present">
                   <TextInput
-                    placeholder="2022 — Present"
+                    placeholder="Jan 2021 — Present"
                     value={item.period}
                     onChange={(e) => update(item.id, { period: e.target.value })}
                   />
                 </Field>
                 <div className="sm:col-span-2">
-                  <Field label="Description">
+                  <Field label="Key Achievements & Description">
                     <TextArea
                       rows={3}
-                      placeholder="What did you own, ship, or improve?"
+                      placeholder="Led development of key web apps, increasing user retention by 25%..."
                       value={item.description}
                       onChange={(e) => update(item.id, { description: e.target.value })}
                     />
@@ -636,7 +687,7 @@ function ExperienceStep({
             </GlowCard>
           </FadeIn>
         ))}
-        <AddRowButton onClick={add} label="Add role" />
+        <AddRowButton onClick={add} label="Add Work Experience" />
       </div>
     </div>
   );
@@ -684,37 +735,37 @@ function EducationStep({
   };
 
   return (
-    <div>
-      <StepHeading title="Education" hint="Degrees, bootcamps, or relevant coursework." />
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Education & Qualifications" hint="List degrees, diplomas, or relevant training." />
       <div className="mt-6 space-y-4">
         {items.map((item, i) => (
           <FadeIn key={item.id} delay={i * 0.04}>
-            <GlowCard className="p-5">
+            <GlowCard className="p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                  Entry {i + 1}
-                </p>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Education {i + 1}
+                </span>
                 <DangerGhostButton onClick={() => remove(item.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
-                  Remove
+                  <span>Remove</span>
                 </DangerGhostButton>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="School">
+                <Field label="School / University">
                   <TextInput
-                    placeholder="University of Lisbon"
+                    placeholder="Stanford University"
                     value={item.school}
                     onChange={(e) => update(item.id, { school: e.target.value })}
                   />
                 </Field>
-                <Field label="Degree">
+                <Field label="Degree / Field of Study">
                   <TextInput
-                    placeholder="B.A. Design"
+                    placeholder="B.S. in Computer Science"
                     value={item.degree}
                     onChange={(e) => update(item.id, { degree: e.target.value })}
                   />
                 </Field>
-                <Field label="Period">
+                <Field label="Period / Graduation Year">
                   <TextInput
                     placeholder="2016 — 2020"
                     value={item.period}
@@ -725,7 +776,7 @@ function EducationStep({
             </GlowCard>
           </FadeIn>
         ))}
-        <AddRowButton onClick={add} label="Add education" />
+        <AddRowButton onClick={add} label="Add Education Entry" />
       </div>
     </div>
   );
@@ -777,30 +828,31 @@ function SkillsStep({ items, onChange, personalInfoId }: { items: Skill[]; onCha
   };
 
   return (
-    <div>
-      <StepHeading title="Skills" hint="Add a skill, then tap it to cycle its level." />
-      <FadeIn delay={0.05} className="mt-6 flex gap-2">
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Skills & Competencies" hint="Type a skill name and press Enter. Click chips to adjust proficiency level." />
+      <FadeIn delay={0.05} className="mt-6 flex flex-col sm:flex-row gap-2.5">
         <TextInput
-          placeholder="e.g. Figma, TypeScript, Negotiation"
+          placeholder="e.g. React, TypeScript, Product Strategy"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
+          className="flex-1"
         />
-        <GhostButton onClick={add}>
-          <Plus className="h-3.5 w-3.5" />
-          Add
-        </GhostButton>
+        <PrimaryButton onClick={add} className="shrink-0 bg-violet-600 hover:bg-violet-700">
+          <Plus className="h-4 w-4" />
+          <span>Add Skill</span>
+        </PrimaryButton>
       </FadeIn>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2.5">
         {items.map((skill) => (
           <FadeIn key={skill.id}>
             <button
               onClick={() => cycleLevel(skill.id)}
-              className="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-3.5 pr-2 text-sm text-gray-700 transition hover:border-[#8B5CF6]/40"
+              className="group inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-2.5 text-xs sm:text-sm text-slate-800 transition-all hover:border-violet-300 hover:shadow-xs active:scale-[0.98]"
             >
-              <span>{skill.name}</span>
-              <span className="rounded-full bg-[#8B5CF6]/10 px-2 py-0.5 text-xs font-medium text-[#8B5CF6]">
+              <span className="font-semibold">{skill.name}</span>
+              <span className="rounded-xl bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700 border border-violet-100">
                 {skill.level}
               </span>
               <span
@@ -808,15 +860,18 @@ function SkillsStep({ items, onChange, personalInfoId }: { items: Skill[]; onCha
                   e.stopPropagation();
                   remove(skill.id);
                 }}
-                className="rounded-full p-0.5 text-gray-300 transition hover:bg-red-50 hover:text-red-500"
+                className="rounded-lg p-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3.5 w-3.5" />
               </span>
             </button>
           </FadeIn>
         ))}
         {items.length === 0 && (
-          <p className="text-sm text-gray-400">No skills yet — add your first one above.</p>
+          <div className="w-full py-8 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+            <Sparkles className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+            <p className="text-xs sm:text-sm text-slate-400 font-medium">No skills added yet — type your skills above.</p>
+          </div>
         )}
       </div>
     </div>
@@ -864,41 +919,41 @@ function ProjectsStep({
   };
 
   return (
-    <div>
-      <StepHeading title="Projects" hint="Portfolio pieces, side projects, open source." />
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Featured Projects" hint="Showcase your key side projects, portfolio items, or open source contributions." />
       <div className="mt-6 space-y-4">
         {items.map((item, i) => (
           <FadeIn key={item.id} delay={i * 0.04}>
-            <GlowCard className="p-5">
+            <GlowCard className="p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Project {i + 1}
-                </p>
+                </span>
                 <DangerGhostButton onClick={() => remove(item.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
-                  Remove
+                  <span>Remove</span>
                 </DangerGhostButton>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Name">
+                <Field label="Project Title">
                   <TextInput
-                    placeholder="Resume Builder AI"
+                    placeholder="AI Resume Builder"
                     value={item.name}
                     onChange={(e) => update(item.id, { name: e.target.value })}
                   />
                 </Field>
-                <Field label="Link" hint="optional">
+                <Field label="Technologies / Link">
                   <TextInput
-                    placeholder="github.com/you/project"
+                    placeholder="Next.js, TypeScript, Tailwind"
                     value={item.link}
                     onChange={(e) => update(item.id, { link: e.target.value })}
                   />
                 </Field>
                 <div className="sm:col-span-2">
-                  <Field label="Description">
+                  <Field label="Description & Key Outcomes">
                     <TextArea
                       rows={3}
-                      placeholder="What it does and what you used to build it."
+                      placeholder="Built a modern SaaS application featuring real-time preview..."
                       value={item.description}
                       onChange={(e) => update(item.id, { description: e.target.value })}
                     />
@@ -908,7 +963,7 @@ function ProjectsStep({
             </GlowCard>
           </FadeIn>
         ))}
-        <AddRowButton onClick={add} label="Add project" />
+        <AddRowButton onClick={add} label="Add Project Entry" />
       </div>
     </div>
   );
@@ -955,37 +1010,37 @@ function CertificationsStep({
   };
 
   return (
-    <div>
-      <StepHeading title="Certifications" hint="Licenses, courses, and credentials." />
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
+      <StepHeading title="Certifications & Honors" hint="Include official certificates, awards, or professional accreditations." />
       <div className="mt-6 space-y-4">
         {items.map((item, i) => (
           <FadeIn key={item.id} delay={i * 0.04}>
-            <GlowCard className="p-5">
+            <GlowCard className="p-5 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Certification {i + 1}
-                </p>
+                </span>
                 <DangerGhostButton onClick={() => remove(item.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
-                  Remove
+                  <span>Remove</span>
                 </DangerGhostButton>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Field label="Name">
+                <Field label="Certification Name">
                   <TextInput
-                    placeholder="AWS Solutions Architect"
+                    placeholder="AWS Certified Solutions Architect"
                     value={item.name}
                     onChange={(e) => update(item.id, { name: e.target.value })}
                   />
                 </Field>
-                <Field label="Issuer">
+                <Field label="Issuing Organization">
                   <TextInput
                     placeholder="Amazon Web Services"
                     value={item.issuer}
                     onChange={(e) => update(item.id, { issuer: e.target.value })}
                   />
                 </Field>
-                <Field label="Year">
+                <Field label="Year Issued">
                   <TextInput
                     placeholder="2024"
                     value={item.year}
@@ -996,7 +1051,7 @@ function CertificationsStep({
             </GlowCard>
           </FadeIn>
         ))}
-        <AddRowButton onClick={add} label="Add certification" />
+        <AddRowButton onClick={add} label="Add Certification Entry" />
       </div>
     </div>
   );
@@ -1006,15 +1061,15 @@ function AddRowButton({ onClick, label }: { onClick: () => void; label: string }
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 transition hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 hover:text-[#8B5CF6]"
+      className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-3.5 text-xs sm:text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-violet-300 hover:bg-violet-50/50 hover:text-violet-700 active:scale-[0.99]"
     >
       <Plus className="h-4 w-4" />
-      {label}
+      <span>{label}</span>
     </button>
   );
 }
 
-/* --------------------------------- Preview --------------------------------- */
+/* --------------------------------- Paper Resume Preview Component --------------------------------- */
 
 function ResumePreview({
   personal,
@@ -1032,37 +1087,47 @@ function ResumePreview({
   certifications: Certification[];
 }) {
   return (
-    <div id="resume-preview" className="rounded-2xl bg-[#0A0A0A] p-3">
-      <div className="mb-2 flex items-center justify-between px-2 pt-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">Live preview</p>
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+    <div id="resume-preview" className="rounded-3xl bg-slate-900 p-2.5 sm:p-3 shadow-xl">
+      <div className="mb-2 flex items-center justify-between px-3 pt-1">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+          <FileText className="h-3.5 w-3.5 text-violet-400" />
+          A4 Paper View
+        </span>
+        <span className="h-2 w-2 rounded-full bg-emerald-400" />
       </div>
-      <div className="max-h-[calc(100vh-9rem)] overflow-y-auto rounded-xl bg-white p-8 shadow-[0_1px_0_rgba(255,255,255,0.05)]">
-        <div className="border-b border-gray-100 pb-4">
-          <h2 className="text-xl font-semibold tracking-tight text-gray-900">
-            {personal.fullName || "Your name"}
+      <div className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
+        
+        {/* Header Section */}
+        <div className="border-b border-slate-200/80 pb-5">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+            {personal.fullName || "Your Full Name"}
           </h2>
-          <p className="text-sm font-medium text-[#8B5CF6]">{personal.title || "Your title"}</p>
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="text-sm font-bold text-violet-600 mt-0.5">{personal.title || "Your Professional Title"}</p>
+          <p className="mt-2 text-xs text-slate-500 font-medium">
             {[personal.email, personal.phone, personal.location].filter(Boolean).join("  ·  ") ||
-              "email · phone · location"}
+              "email@example.com  ·  +1 (555) 000-0000  ·  City, Country"}
           </p>
-          {personal.summary && <p className="mt-3 text-sm leading-relaxed text-gray-600">{personal.summary}</p>}
+          {personal.summary && (
+            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 font-normal">
+              {personal.summary}
+            </p>
+          )}
         </div>
 
+        {/* Work Experience */}
         {experience.length > 0 && (
-          <PreviewSection title="Experience">
+          <PreviewSection title="Work Experience">
             <div className="space-y-4">
               {experience.map((item) => (
                 <div key={item.id}>
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-sm font-medium text-gray-900">
-                      {item.role || "Role"} {item.company && <span className="text-gray-400">· {item.company}</span>}
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                      {item.role || "Job Position"} {item.company && <span className="font-semibold text-slate-500">· {item.company}</span>}
                     </p>
-                    <p className="shrink-0 text-xs text-gray-400">{item.period}</p>
+                    <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
                   </div>
                   {item.description && (
-                    <p className="mt-1 text-sm leading-relaxed text-gray-600">{item.description}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600 font-normal">{item.description}</p>
                   )}
                 </div>
               ))}
@@ -1070,29 +1135,31 @@ function ResumePreview({
           </PreviewSection>
         )}
 
+        {/* Education */}
         {education.length > 0 && (
           <PreviewSection title="Education">
             <div className="space-y-3">
               {education.map((item) => (
                 <div key={item.id} className="flex items-baseline justify-between gap-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.school || "School"}
-                    {item.degree && <span className="font-normal text-gray-500"> — {item.degree}</span>}
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    {item.school || "University / College"}
+                    {item.degree && <span className="font-normal text-slate-600"> — {item.degree}</span>}
                   </p>
-                  <p className="shrink-0 text-xs text-gray-400">{item.period}</p>
+                  <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
                 </div>
               ))}
             </div>
           </PreviewSection>
         )}
 
+        {/* Skills */}
         {skills.length > 0 && (
-          <PreviewSection title="Skills">
+          <PreviewSection title="Skills & Tools">
             <div className="flex flex-wrap gap-1.5">
               {skills.map((s) => (
                 <span
                   key={s.id}
-                  className="rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600"
+                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700"
                 >
                   {s.name}
                 </span>
@@ -1101,31 +1168,33 @@ function ResumePreview({
           </PreviewSection>
         )}
 
+        {/* Featured Projects */}
         {projects.length > 0 && (
           <PreviewSection title="Projects">
             <div className="space-y-3">
               {projects.map((p) => (
                 <div key={p.id}>
-                  <p className="text-sm font-medium text-gray-900">
-                    {p.name || "Project"} {p.link && <span className="font-normal text-gray-400">· {p.link}</span>}
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    {p.name || "Project Title"} {p.link && <span className="font-normal text-violet-600 text-xs">({p.link})</span>}
                   </p>
-                  {p.description && <p className="mt-0.5 text-sm text-gray-600">{p.description}</p>}
+                  {p.description && <p className="mt-0.5 text-xs text-slate-600 font-normal leading-relaxed">{p.description}</p>}
                 </div>
               ))}
             </div>
           </PreviewSection>
         )}
 
+        {/* Certifications */}
         {certifications.length > 0 && (
           <PreviewSection title="Certifications">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {certifications.map((c) => (
-                <div key={c.id} className="flex items-baseline justify-between gap-3">
-                  <p className="text-sm text-gray-800">
+                <div key={c.id} className="flex items-baseline justify-between gap-3 text-xs">
+                  <p className="font-bold text-slate-800">
                     {c.name || "Certification"}
-                    {c.issuer && <span className="text-gray-400"> · {c.issuer}</span>}
+                    {c.issuer && <span className="font-normal text-slate-500"> · {c.issuer}</span>}
                   </p>
-                  <p className="text-xs text-gray-400">{c.year}</p>
+                  <p className="text-[11px] text-slate-400 font-medium">{c.year}</p>
                 </div>
               ))}
             </div>
@@ -1138,8 +1207,8 @@ function ResumePreview({
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-gray-100 py-4 last:border-0">
-      <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">{title}</p>
+    <div className="border-b border-slate-100 py-3.5 last:border-0">
+      <p className="mb-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">{title}</p>
       {children}
     </div>
   );
