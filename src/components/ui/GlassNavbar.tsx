@@ -28,7 +28,7 @@ const defaultNavItems: NavItem[] = [
 export default function GlassNavbar({
   items = defaultNavItems,
   defaultActiveId = "features",
-  ctaText = "Build Resume",
+  ctaText = "Build Resume Free",
   ctaHref = "/builder",
 }: GlassNavbarProps) {
   const [activeId, setActiveId] = useState<string>(defaultActiveId);
@@ -44,30 +44,30 @@ export default function GlassNavbar({
   }, []);
 
   return (
-    <header className="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-3xl transition-all duration-300">
-      {/* Semi-transparent Glassmorphism Floating Pill Navbar */}
+    <header className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-6xl transition-all duration-300">
+      {/* Professional SaaS Glassmorphism Floating Pill Navbar */}
       <div
         className={`relative rounded-full border transition-all duration-300 ${
           scrolled
-            ? "border-white/20 bg-slate-950/40 backdrop-blur-xl shadow-2xl shadow-black/50 px-3 py-1.5"
-            : "border-white/15 bg-slate-950/25 backdrop-blur-md shadow-xl shadow-black/30 px-3.5 py-1.5"
+            ? "border-slate-700/80 bg-[#0B0F17]/85 backdrop-blur-2xl shadow-2xl shadow-black/70 px-4 sm:px-6 py-2.5 sm:py-3"
+            : "border-slate-800/80 bg-[#0B0F17]/65 backdrop-blur-xl shadow-xl shadow-black/40 px-5 sm:px-7 py-3 sm:py-3.5"
         }`}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-4">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group pl-1">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-md shadow-violet-500/20 group-hover:scale-105 transition-transform">
-              <FileText className="w-3.5 h-3.5 text-white" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-105 transition-transform">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="font-extrabold text-xs sm:text-sm tracking-tight text-white">
+            <span className="font-black text-base sm:text-lg tracking-tight text-white">
               Resume<span className="text-violet-400">AI</span>
             </span>
           </Link>
 
           {/* Desktop Nav Items inside Floating Glass Pill */}
           <nav className="hidden md:flex items-center">
-            <div className="p-0.5 rounded-full bg-black/25 border border-white/10 backdrop-blur-sm flex items-center gap-0.5">
+            <div className="p-1 rounded-full bg-slate-900/80 border border-slate-800/90 shadow-inner flex items-center gap-1">
               {items.map((item) => {
                 const isActive = activeId === item.id;
                 return (
@@ -75,15 +75,15 @@ export default function GlassNavbar({
                     key={item.id}
                     href={item.href}
                     onClick={() => setActiveId(item.id)}
-                    className={`relative px-3.5 py-1 rounded-full text-[11px] font-semibold transition-colors duration-200 ${
-                      isActive ? "text-slate-950 font-bold" : "text-slate-200 hover:text-white"
+                    className={`relative px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors duration-200 ${
+                      isActive ? "text-slate-950 font-extrabold" : "text-slate-300 hover:text-white"
                     }`}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="floatingGlassPillIndicator"
-                        className="absolute inset-0 rounded-full bg-white shadow-md shadow-white/20"
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        className="absolute inset-0 rounded-full bg-white shadow-lg shadow-white/20"
+                        transition={{ type: "spring", stiffness: 380, damping: 28 }}
                       />
                     )}
                     <span className="relative z-10">{item.label}</span>
@@ -94,16 +94,16 @@ export default function GlassNavbar({
           </nav>
 
           {/* Right Action Controls */}
-          <div className="hidden md:flex items-center gap-1.5 pr-0.5">
+          <div className="hidden md:flex items-center gap-3">
             <Link href="/resumes">
-              <span className="text-[11px] font-medium text-slate-300 hover:text-white px-2.5 py-1 transition-colors">
+              <span className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white px-3 py-2 transition-colors">
                 My Resumes
               </span>
             </Link>
             <Link href={ctaHref}>
-              <button className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-[11px] px-3.5 py-1.5 shadow-md shadow-violet-600/30 hover:scale-[1.03] active:scale-[0.98] transition-all">
+              <button className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm px-5 py-2.5 sm:py-3 shadow-lg shadow-violet-600/35 hover:scale-[1.03] active:scale-[0.98] transition-all">
                 <span>{ctaText}</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
           </div>
@@ -111,9 +111,9 @@ export default function GlassNavbar({
           {/* Mobile Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 text-slate-200 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+            className="md:hidden p-2 text-slate-200 hover:text-white rounded-full hover:bg-slate-800/80 transition-colors"
           >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
         </div>
@@ -123,13 +123,13 @@ export default function GlassNavbar({
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="mt-2 md:hidden rounded-2xl border border-white/15 bg-slate-950/70 backdrop-blur-2xl p-3 shadow-2xl space-y-2"
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="mt-3 md:hidden rounded-3xl border border-slate-800 bg-[#0B0F17]/95 backdrop-blur-2xl p-5 shadow-2xl space-y-4"
           >
-            <div className="space-y-0.5">
+            <div className="space-y-1.5">
               {items.map((item) => {
                 const isActive = activeId === item.id;
                 return (
@@ -140,10 +140,10 @@ export default function GlassNavbar({
                       setActiveId(item.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`block px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    className={`block px-4 py-3 rounded-2xl text-base font-bold transition-all ${
                       isActive
-                        ? "bg-white text-slate-950 shadow-md font-bold"
-                        : "text-slate-200 hover:bg-white/10 hover:text-white"
+                        ? "bg-white text-slate-950 shadow-md"
+                        : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                     }`}
                   >
                     {item.label}
@@ -151,14 +151,14 @@ export default function GlassNavbar({
                 );
               })}
             </div>
-            <div className="pt-2 flex flex-col gap-1.5 border-t border-white/10">
+            <div className="pt-3 flex flex-col gap-2.5 border-t border-slate-800">
               <Link href="/resumes" onClick={() => setMobileMenuOpen(false)}>
-                <button className="w-full py-2 rounded-xl border border-white/10 bg-slate-900/60 text-xs font-semibold text-slate-200">
+                <button className="w-full py-3 rounded-2xl border border-slate-700 bg-slate-900 text-sm font-semibold text-slate-200">
                   My Resumes
                 </button>
               </Link>
               <Link href={ctaHref} onClick={() => setMobileMenuOpen(false)}>
-                <button className="w-full py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold text-white shadow-lg shadow-violet-600/30">
+                <button className="w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-600/30">
                   {ctaText}
                 </button>
               </Link>
