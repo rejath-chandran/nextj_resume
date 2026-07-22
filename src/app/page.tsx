@@ -54,6 +54,14 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [activeNav, setActiveNav] = useState<string>("features");
+
+  const navItems = [
+    { id: "features", label: "Features", href: "#features" },
+    { id: "demo", label: "Live Preview", href: "#demo" },
+    { id: "pricing", label: "Pricing", href: "#pricing" },
+    { id: "faq", label: "FAQ", href: "#faq" },
+  ];
 
   const features = [
     { icon: Zap, title: "Real-time Live Preview", desc: "Type your details on the left, watch your ATS resume format instantly on the right." },
@@ -120,21 +128,42 @@ export default function LandingPage() {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Features</a>
-              <a href="#demo" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Live Preview</a>
-              <a href="#pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Pricing</a>
-              <a href="#faq" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">FAQ</a>
+            {/* Transparent Glass Nav Pill Container */}
+            <nav className="hidden md:flex items-center">
+              <div className="p-1 rounded-full bg-slate-900/60 backdrop-blur-2xl border border-slate-800/80 shadow-xl shadow-black/20 flex items-center gap-0.5">
+                {navItems.map((item) => {
+                  const isActive = activeNav === item.id;
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => setActiveNav(item.id)}
+                      className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                        isActive ? "text-slate-900 font-bold" : "text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeGlassPill"
+                          className="absolute inset-0 rounded-full bg-white shadow-md shadow-white/20"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-10">{item.label}</span>
+                    </a>
+                  );
+                })}
+              </div>
             </nav>
 
             <div className="hidden md:flex items-center gap-3">
               <Link href="/resumes">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl">
                   My Resumes
                 </Button>
               </Link>
               <Link href="/builder">
-                <Button size="sm" className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-violet-600/30 rounded-xl px-5">
+                <Button size="sm" className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-violet-600/30 rounded-full px-5">
                   Build Resume
                 </Button>
               </Link>
@@ -159,42 +188,29 @@ export default function LandingPage() {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-b border-slate-800 bg-[#0B0F17] px-4 pt-2 pb-6 space-y-3"
             >
-              <a 
-                href="#features" 
-                onClick={() => setMobileMenuOpen(false)} 
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800"
-              >
-                Features
-              </a>
-              <a 
-                href="#demo" 
-                onClick={() => setMobileMenuOpen(false)} 
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800"
-              >
-                Live Preview
-              </a>
-              <a 
-                href="#pricing" 
-                onClick={() => setMobileMenuOpen(false)} 
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800"
-              >
-                Pricing
-              </a>
-              <a 
-                href="#faq" 
-                onClick={() => setMobileMenuOpen(false)} 
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800"
-              >
-                FAQ
-              </a>
+              {navItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
+                    activeNav === item.id ? "bg-white text-slate-900 font-bold" : "text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              ))}
               <div className="pt-2 flex flex-col gap-2">
                 <Link href="/resumes" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full justify-center border-slate-700 text-slate-200 hover:bg-slate-800">
+                  <Button variant="outline" className="w-full justify-center border-slate-700 text-slate-200 hover:bg-slate-800 rounded-xl">
                     My Resumes
                   </Button>
                 </Link>
                 <Link href="/builder" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full justify-center bg-violet-600 hover:bg-violet-500">
+                  <Button className="w-full justify-center bg-violet-600 hover:bg-violet-500 rounded-full">
                     Create Resume Free
                   </Button>
                 </Link>
