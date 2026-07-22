@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model PersonalInfo {
+  id              Int             @id @default(autoincrement())
+  fullName        String
+  email           String
+  phone           String?
+  location        String?
+  linkedinUrl     String?
+  githubUrl       String?
+  portfolioUrl    String?
+  summary         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  experiences     Experience[]
+  education       Education[]
+  skills          Skill[]
+  projects        Project[]
+  certifications  Certification[]
+
+  @@map("personal_info")
+}
+
+model Experience {
+  id              Int          @id @default(autoincrement())
+  personalInfoId  Int
+  company         String
+  position        String
+  location        String?
+  startDate       String
+  endDate         String?
+  currentJob      Boolean      @default(false)
+  description     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  personalInfo    PersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  @@index([personalInfoId])
+  @@map("experiences")
+}
+
+model Education {
+  id              Int          @id @default(autoincrement())
+  personalInfoId  Int
+  institution     String
+  degree          String
+  fieldOfStudy    String?
+  location        String?
+  graduationDate  String?
+  gpa             String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  personalInfo    PersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  @@index([personalInfoId])
+  @@map("education")
+}
+
+model Skill {
+  id                Int          @id @default(autoincrement())
+  personalInfoId    Int
+  category          String
+  skillName         String
+  proficiencyLevel  String       @default("intermediate")
+  createdAt         DateTime     @default(now())
+  personalInfo      PersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  @@index([personalInfoId])
+  @@map("skills")
+}
+
+model Project {
+  id              Int          @id @default(autoincrement())
+  personalInfoId  Int
+  name            String
+  description     String?
+  technologies    String?
+  projectUrl      String?
+  githubUrl       String?
+  startDate       String?
+  endDate         String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  personalInfo    PersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  @@index([personalInfoId])
+  @@map("projects")
+}
+
+model Certification {
+  id                   Int          @id @default(autoincrement())
+  personalInfoId       Int
+  name                 String
+  issuingOrganization  String
+  issueDate            String?
+  expirationDate       String?
+  credentialUrl        String?
+  createdAt            DateTime     @default(now())
+  personalInfo         PersonalInfo @relation(fields: [personalInfoId], references: [id], onDelete: Cascade)
+
+  @@index([personalInfoId])
+  @@map("certifications")
+}
