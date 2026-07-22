@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import LiquidEther from "@/components/ui/LiquidEther";
+import GlassNavbar from "@/components/ui/GlassNavbar";
 import { Button } from "@/components/ui/button";
 import { 
   FileText, 
@@ -20,8 +21,6 @@ import {
   LayoutTemplate,
   CloudSync,
   Code2,
-  Menu,
-  X,
   ChevronDown,
   GraduationCap,
   Briefcase
@@ -51,17 +50,8 @@ function FadeInScroll({
 }
 
 export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [activeNav, setActiveNav] = useState<string>("features");
-
-  const navItems = [
-    { id: "features", label: "Features", href: "#features" },
-    { id: "demo", label: "Live Preview", href: "#demo" },
-    { id: "pricing", label: "Pricing", href: "#pricing" },
-    { id: "faq", label: "FAQ", href: "#faq" },
-  ];
 
   const features = [
     { icon: Zap, title: "Real-time Live Preview", desc: "Type your details on the left, watch your ATS resume format instantly on the right." },
@@ -115,112 +105,10 @@ export default function LandingPage() {
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-tr from-violet-600/20 via-purple-500/15 to-indigo-600/10 blur-[130px] rounded-full" />
       </div>
 
-      {/* Navigation Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0B0F17]/80 backdrop-blur-xl border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-105 transition-transform">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">
-                Resume<span className="text-violet-400">AI</span>
-              </span>
-            </Link>
+      {/* Floating Centered Glassmorphism Navigation Bar */}
+      <GlassNavbar />
 
-            {/* Transparent Glass Nav Pill Container */}
-            <nav className="hidden md:flex items-center">
-              <div className="p-1 rounded-full bg-slate-900/60 backdrop-blur-2xl border border-slate-800/80 shadow-xl shadow-black/20 flex items-center gap-0.5">
-                {navItems.map((item) => {
-                  const isActive = activeNav === item.id;
-                  return (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => setActiveNav(item.id)}
-                      className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
-                        isActive ? "text-slate-900 font-bold" : "text-slate-300 hover:text-white"
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeGlassPill"
-                          className="absolute inset-0 rounded-full bg-white shadow-md shadow-white/20"
-                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        />
-                      )}
-                      <span className="relative z-10">{item.label}</span>
-                    </a>
-                  );
-                })}
-              </div>
-            </nav>
-
-            <div className="hidden md:flex items-center gap-3">
-              <Link href="/resumes">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl">
-                  My Resumes
-                </Button>
-              </Link>
-              <Link href="/builder">
-                <Button size="sm" className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-lg shadow-violet-600/30 rounded-full px-5">
-                  Build Resume
-                </Button>
-              </Link>
-            </div>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800/60"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation Drawer */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-b border-slate-800 bg-[#0B0F17] px-4 pt-2 pb-6 space-y-3"
-            >
-              {navItems.map((item) => (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => {
-                    setActiveNav(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                    activeNav === item.id ? "bg-white text-slate-900 font-bold" : "text-slate-300 hover:bg-slate-800"
-                  }`}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div className="pt-2 flex flex-col gap-2">
-                <Link href="/resumes" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full justify-center border-slate-700 text-slate-200 hover:bg-slate-800 rounded-xl">
-                    My Resumes
-                  </Button>
-                </Link>
-                <Link href="/builder" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full justify-center bg-violet-600 hover:bg-violet-500 rounded-full">
-                    Create Resume Free
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      <main className="relative z-10 pt-20">
+      <main className="relative z-10 pt-24 sm:pt-28">
         
         {/* HERO SECTION WITH LIQUID ETHER EFFECT */}
         <section className="relative py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
