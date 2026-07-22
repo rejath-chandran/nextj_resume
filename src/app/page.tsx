@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import LiquidEther from "@/components/ui/LiquidEther";
 import { Button } from "@/components/ui/button";
 import { 
   FileText, 
@@ -22,8 +23,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  Lock,
-  Building2,
   GraduationCap,
   Briefcase
 } from "lucide-react";
@@ -82,11 +81,30 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 font-sans selection:bg-violet-500 selection:text-white overflow-x-hidden">
       
-      {/* Glow Background Gradient Orbs */}
+      {/* Background LiquidEther ReactBits Animation Canvas */}
+      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
+        <LiquidEther
+          colors={['#6366F1', '#8B5CF6', '#D8B4FE', '#3B82F6']}
+          mouseForce={20}
+          cursorSize={120}
+          isViscous={false}
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.4}
+          isBounce={false}
+          autoDemo={true}
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={2000}
+          autoRampDuration={0.6}
+        />
+      </div>
+
+      {/* Glow Background Overlay Blur */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-tr from-violet-600/20 via-purple-500/15 to-indigo-600/10 blur-[130px] rounded-full" />
-        <div className="absolute top-1/2 -left-40 w-[600px] h-[600px] bg-violet-900/10 blur-[150px] rounded-full" />
-        <div className="absolute top-3/4 -right-40 w-[600px] h-[600px] bg-purple-900/10 blur-[150px] rounded-full" />
       </div>
 
       {/* Navigation Header */}
@@ -188,12 +206,12 @@ export default function LandingPage() {
 
       <main className="relative z-10 pt-20">
         
-        {/* HERO SECTION */}
+        {/* HERO SECTION WITH LIQUID ETHER EFFECT */}
         <section className="relative py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
           <FadeInScroll delay={0.1}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 mb-8 backdrop-blur-md">
               <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
-              <span className="text-xs sm:text-sm font-semibold text-violet-300">Next-Gen Resume Platform 2.0</span>
+              <span className="text-xs sm:text-sm font-semibold text-violet-300">React Bits LiquidEther Fluid Engine</span>
             </div>
           </FadeInScroll>
 
