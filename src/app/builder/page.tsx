@@ -19,7 +19,9 @@ import {
   FileText,
   CheckCircle2,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 import { FadeIn, GlowCard, Magnetic, ProgressRing, StepPanel } from "@/components/builder/animated";
@@ -31,6 +33,9 @@ import {
   TextArea,
   TextInput,
 } from "@/components/builder/form-fields";
+import TemplateSelector, { type TemplateName } from "@/components/builder/TemplateSelector";
+import ProfessionalTemplate from "@/components/builder/templates/ProfessionalTemplate";
+import CleanSidebarTemplate from "@/components/builder/templates/CleanSidebarTemplate";
 
 /* --------------------------------- Types --------------------------------- */
 
@@ -72,6 +77,8 @@ export default function BuilderPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateName>("classic");
 
   const [personal, setPersonal] = useState<PersonalInfo>({
     fullName: "",
@@ -294,13 +301,35 @@ export default function BuilderPage() {
       </header>
 
       {/* Main Container - 3 Column Layout */}
-      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-6 sm:gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[230px_1fr_420px] xl:grid-cols-[250px_1fr_460px] lg:px-8">
+      <div
+        className={
+          "mx-auto grid max-w-[1600px] grid-cols-1 gap-6 sm:gap-8 px-4 py-6 sm:px-6 lg:px-8 transition-[grid-template-columns] duration-300 ease-in-out " +
+          (navCollapsed
+            ? "lg:grid-cols-[76px_1fr_420px] xl:grid-cols-[76px_1fr_460px]"
+            : "lg:grid-cols-[230px_1fr_420px] xl:grid-cols-[250px_1fr_460px]")
+        }
+      >
         
         {/* Desktop Left Step Navigation Rail */}
         <nav className="hidden lg:block">
           <div className="sticky top-24 space-y-4">
-            <div className="px-3">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Sections</span>
+            <div className={"flex items-center px-1 " + (navCollapsed ? "justify-center" : "justify-between px-3")}>
+              {!navCollapsed && (
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Sections
+                </span>
+              )}
+              <button
+                onClick={() => setNavCollapsed((v) => !v)}
+                title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-violet-700"
+              >
+                {navCollapsed ? (
+                  <ChevronsRight className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronsLeft className="h-3.5 w-3.5" />
+                )}
+              </button>
             </div>
             <ol className="space-y-1">
               {STEPS.map((step, i) => (
@@ -310,6 +339,7 @@ export default function BuilderPage() {
                     index={i}
                     active={i === stepIndex}
                     done={stepIsComplete(step.key)}
+                    collapsed={navCollapsed}
                     onClick={() => goTo(i)}
                   />
                 </li>
@@ -317,17 +347,30 @@ export default function BuilderPage() {
             </ol>
 
             {/* Overall Progress Widget */}
-            <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
-                <span>Resume Progress</span>
-                <span className="text-violet-600 font-bold">{Math.round(completion * 100)}%</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div 
-                  className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all duration-500 ease-out" 
-                  style={{ width: `${completion * 100}%` }}
-                />
-              </div>
+            <div
+              className={
+                "mt-6 rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition-all " +
+                (navCollapsed ? "flex justify-center p-2.5" : "p-4")
+              }
+            >
+              {navCollapsed ? (
+                <div title={`${Math.round(completion * 100)}% complete`}>
+                  <ProgressRing progress={completion} size={28} strokeWidth={3} />
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
+                    <span>Resume Progress</span>
+                    <span className="text-violet-600 font-bold">{Math.round(completion * 100)}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div 
+                      className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all duration-500 ease-out" 
+                      style={{ width: `${completion * 100}%` }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </nav>
@@ -382,6 +425,11 @@ export default function BuilderPage() {
         {/* Right Sticky Desktop Live Preview Panel */}
         <aside className="hidden lg:block">
           <div className="sticky top-24">
+            {/* Template Selector */}
+            <div className="mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-1">Select Template</p>
+              <TemplateSelector selected={selectedTemplate} onChange={setSelectedTemplate} />
+            </div>
             <div className="mb-2.5 flex items-center justify-between px-1">
               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -396,6 +444,7 @@ export default function BuilderPage() {
               skills={skills}
               projects={projects}
               certifications={certifications}
+              template={selectedTemplate}
             />
           </div>
         </aside>
@@ -414,6 +463,11 @@ export default function BuilderPage() {
                 <X className="h-4 w-4" />
               </GhostButton>
             </div>
+            {/* Mobile Template Selector */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Select Template</p>
+              <TemplateSelector selected={selectedTemplate} onChange={setSelectedTemplate} />
+            </div>
             <ResumePreview
               personal={personal}
               experience={experience}
@@ -421,6 +475,7 @@ export default function BuilderPage() {
               skills={skills}
               projects={projects}
               certifications={certifications}
+              template={selectedTemplate}
             />
             <div className="pt-2">
               <PrimaryButton onClick={() => window.print()} className="w-full bg-violet-600 hover:bg-violet-700">
@@ -442,20 +497,25 @@ function StepRailItem({
   index,
   active,
   done,
+  collapsed,
   onClick,
 }: {
   step: (typeof STEPS)[number];
   index: number;
   active: boolean;
   done: boolean;
+  collapsed?: boolean;
   onClick: () => void;
 }) {
   const Icon = step.icon;
   return (
     <button
       onClick={onClick}
+      title={collapsed ? step.label : undefined}
       className={
-        "group flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-all duration-200 " +
+        "group flex w-full items-center gap-3 rounded-2xl py-3 text-left transition-all duration-200 " +
+        (collapsed ? "justify-center px-0" : "px-3.5") +
+        " " +
         (active
           ? "bg-slate-900 text-white shadow-md shadow-slate-900/10 font-semibold"
           : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium")
@@ -473,10 +533,12 @@ function StepRailItem({
       >
         {done && !active ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : index + 1}
       </span>
-      <span className="flex items-center gap-2 text-xs sm:text-sm">
-        <Icon className="h-4 w-4 opacity-80" />
-        {step.label}
-      </span>
+      {!collapsed && (
+        <span className="flex items-center gap-2 text-xs sm:text-sm">
+          <Icon className="h-4 w-4 opacity-80" />
+          {step.label}
+        </span>
+      )}
     </button>
   );
 }
@@ -1078,6 +1140,7 @@ function ResumePreview({
   skills,
   projects,
   certifications,
+  template = "classic",
 }: {
   personal: PersonalInfo;
   experience: Experience[];
@@ -1085,7 +1148,10 @@ function ResumePreview({
   skills: Skill[];
   projects: Project[];
   certifications: Certification[];
+  template?: TemplateName;
 }) {
+  const templateProps = { personal, experience, education, skills, projects, certifications };
+
   return (
     <div id="resume-preview" className="rounded-3xl bg-slate-900 p-2.5 sm:p-3 shadow-xl">
       <div className="mb-2 flex items-center justify-between px-3 pt-1">
@@ -1096,112 +1162,137 @@ function ResumePreview({
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
       </div>
       <div className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
-        
-        {/* Header Section */}
-        <div className="border-b border-slate-200/80 pb-5">
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-            {personal.fullName || "Your Full Name"}
-          </h2>
-          <p className="text-sm font-bold text-violet-600 mt-0.5">{personal.title || "Your Professional Title"}</p>
-          <p className="mt-2 text-xs text-slate-500 font-medium">
-            {[personal.email, personal.phone, personal.location].filter(Boolean).join("  ·  ") ||
-              "email@example.com  ·  +1 (555) 000-0000  ·  City, Country"}
+        {template === "professional" && <ProfessionalTemplate {...templateProps} />}
+        {template === "clean-sidebar" && <CleanSidebarTemplate {...templateProps} />}
+        {template === "classic" && <ClassicTemplate {...templateProps} />}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------- Classic Template (Original) --------------------------------- */
+
+function ClassicTemplate({
+  personal,
+  experience,
+  education,
+  skills,
+  projects,
+  certifications,
+}: {
+  personal: PersonalInfo;
+  experience: Experience[];
+  education: Education[];
+  skills: Skill[];
+  projects: Project[];
+  certifications: Certification[];
+}) {
+  return (
+    <>
+      {/* Header Section */}
+      <div className="border-b border-slate-200/80 pb-5">
+        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+          {personal.fullName || "Your Full Name"}
+        </h2>
+        <p className="text-sm font-bold text-violet-600 mt-0.5">{personal.title || "Your Professional Title"}</p>
+        <p className="mt-2 text-xs text-slate-500 font-medium">
+          {[personal.email, personal.phone, personal.location].filter(Boolean).join("  ·  ") ||
+            "email@example.com  ·  +1 (555) 000-0000  ·  City, Country"}
+        </p>
+        {personal.summary && (
+          <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 font-normal">
+            {personal.summary}
           </p>
-          {personal.summary && (
-            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 font-normal">
-              {personal.summary}
-            </p>
-          )}
-        </div>
-
-        {/* Work Experience */}
-        {experience.length > 0 && (
-          <PreviewSection title="Work Experience">
-            <div className="space-y-4">
-              {experience.map((item) => (
-                <div key={item.id}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-xs sm:text-sm font-bold text-slate-900">
-                      {item.role || "Job Position"} {item.company && <span className="font-semibold text-slate-500">· {item.company}</span>}
-                    </p>
-                    <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
-                  </div>
-                  {item.description && (
-                    <p className="mt-1 text-xs leading-relaxed text-slate-600 font-normal">{item.description}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </PreviewSection>
         )}
+      </div>
 
-        {/* Education */}
-        {education.length > 0 && (
-          <PreviewSection title="Education">
-            <div className="space-y-3">
-              {education.map((item) => (
-                <div key={item.id} className="flex items-baseline justify-between gap-3">
+      {/* Work Experience */}
+      {experience.length > 0 && (
+        <PreviewSection title="Work Experience">
+          <div className="space-y-4">
+            {experience.map((item) => (
+              <div key={item.id}>
+                <div className="flex items-baseline justify-between gap-3">
                   <p className="text-xs sm:text-sm font-bold text-slate-900">
-                    {item.school || "University / College"}
-                    {item.degree && <span className="font-normal text-slate-600"> — {item.degree}</span>}
+                    {item.role || "Job Position"} {item.company && <span className="font-semibold text-slate-500">· {item.company}</span>}
                   </p>
                   <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
                 </div>
-              ))}
-            </div>
-          </PreviewSection>
-        )}
+                {item.description && (
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 font-normal">{item.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </PreviewSection>
+      )}
 
-        {/* Skills */}
-        {skills.length > 0 && (
-          <PreviewSection title="Skills & Tools">
-            <div className="flex flex-wrap gap-1.5">
-              {skills.map((s) => (
-                <span
-                  key={s.id}
-                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700"
-                >
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          </PreviewSection>
-        )}
+      {/* Education */}
+      {education.length > 0 && (
+        <PreviewSection title="Education">
+          <div className="space-y-3">
+            {education.map((item) => (
+              <div key={item.id} className="flex items-baseline justify-between gap-3">
+                <p className="text-xs sm:text-sm font-bold text-slate-900">
+                  {item.school || "University / College"}
+                  {item.degree && <span className="font-normal text-slate-600"> — {item.degree}</span>}
+                </p>
+                <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
+              </div>
+            ))}
+          </div>
+        </PreviewSection>
+      )}
 
-        {/* Featured Projects */}
-        {projects.length > 0 && (
-          <PreviewSection title="Projects">
-            <div className="space-y-3">
-              {projects.map((p) => (
-                <div key={p.id}>
-                  <p className="text-xs sm:text-sm font-bold text-slate-900">
-                    {p.name || "Project Title"} {p.link && <span className="font-normal text-violet-600 text-xs">({p.link})</span>}
-                  </p>
-                  {p.description && <p className="mt-0.5 text-xs text-slate-600 font-normal leading-relaxed">{p.description}</p>}
-                </div>
-              ))}
-            </div>
-          </PreviewSection>
-        )}
+      {/* Skills */}
+      {skills.length > 0 && (
+        <PreviewSection title="Skills & Tools">
+          <div className="flex flex-wrap gap-1.5">
+            {skills.map((s) => (
+              <span
+                key={s.id}
+                className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700"
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </PreviewSection>
+      )}
 
-        {/* Certifications */}
-        {certifications.length > 0 && (
-          <PreviewSection title="Certifications">
-            <div className="space-y-2">
-              {certifications.map((c) => (
-                <div key={c.id} className="flex items-baseline justify-between gap-3 text-xs">
-                  <p className="font-bold text-slate-800">
-                    {c.name || "Certification"}
-                    {c.issuer && <span className="font-normal text-slate-500"> · {c.issuer}</span>}
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-medium">{c.year}</p>
-                </div>
-              ))}
-            </div>
-          </PreviewSection>
-        )}
-      </div>
-    </div>
+      {/* Featured Projects */}
+      {projects.length > 0 && (
+        <PreviewSection title="Projects">
+          <div className="space-y-3">
+            {projects.map((p) => (
+              <div key={p.id}>
+                <p className="text-xs sm:text-sm font-bold text-slate-900">
+                  {p.name || "Project Title"} {p.link && <span className="font-normal text-violet-600 text-xs">({p.link})</span>}
+                </p>
+                {p.description && <p className="mt-0.5 text-xs text-slate-600 font-normal leading-relaxed">{p.description}</p>}
+              </div>
+            ))}
+          </div>
+        </PreviewSection>
+      )}
+
+      {/* Certifications */}
+      {certifications.length > 0 && (
+        <PreviewSection title="Certifications">
+          <div className="space-y-2">
+            {certifications.map((c) => (
+              <div key={c.id} className="flex items-baseline justify-between gap-3 text-xs">
+                <p className="font-bold text-slate-800">
+                  {c.name || "Certification"}
+                  {c.issuer && <span className="font-normal text-slate-500"> · {c.issuer}</span>}
+                </p>
+                <p className="text-[11px] text-slate-400 font-medium">{c.year}</p>
+              </div>
+            ))}
+          </div>
+        </PreviewSection>
+      )}
+    </>
   );
 }
 
