@@ -1247,14 +1247,14 @@ function ResumePreview({
 
   return (
     <div id="resume-preview" className="rounded-3xl bg-slate-900 p-2.5 sm:p-3 shadow-xl">
-      <div className="mb-2 flex items-center justify-between px-3 pt-1">
+      <div data-print-hide className="mb-2 flex items-center justify-between px-3 pt-1">
         <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 text-violet-400" />
           A4 Paper View
         </span>
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
       </div>
-      <div className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
+      <div id="resume-content" className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
         {template === "professional" && <ProfessionalTemplate {...templateProps} />}
         {template === "clean-sidebar" && <CleanSidebarTemplate {...templateProps} />}
         {template === "classic" && <ClassicTemplate {...templateProps} />}

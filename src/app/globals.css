@@ -138,21 +138,140 @@
   scrollbar-width: none;
 }
 
+/* ============================================================
+   A4 PDF Export — Pixel-Perfect Print Styles
+   ============================================================ */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 15mm 12mm 15mm;
+}
+
 @media print {
+  /* 1. Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* 2. Kill all animations */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* 3. Hide everything on the page */
   body * {
     visibility: hidden;
   }
-  
-  #resume-preview,
-  #resume-preview * {
-    visibility: visible;
+
+  /* 4. Show only the resume content and its children */
+  #resume-content,
+  #resume-content * {
+    visibility: visible !important;
   }
-  
+
+  /* 5. Reset html/body for A4 print */
+  html {
+    width: 210mm;
+    background: white !important;
+  }
+
+  body {
+    width: 210mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  /* 6. Position the resume content to fill the page */
+  #resume-content {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #1e293b !important;
+    font-size: 10.5pt !important;
+    line-height: 1.5 !important;
+    z-index: 99999 !important;
+  }
+
+  /* 7. Hide the dark chrome wrapper bar */
+  [data-print-hide] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* 8. Strip the dark wrapper background */
   #resume-preview {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* 9. Smart page break control */
+  #resume-content > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 10. Headings stay with content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* 11. Keep list items together */
+  ul, ol, li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 12. Clean links for print */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  /* 13. SVG icons in resume */
+  #resume-content svg {
+    visibility: visible !important;
+    display: inline-block !important;
+  }
+
+  /* 14. Preserve border colors */
+  #resume-content [class*="border"] {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* 15. Preserve skill chip backgrounds */
+  #resume-content span[class*="bg-slate-100"] {
+    background-color: #f1f5f9 !important;
+  }
+
+  /* 16. Preserve skill dot colors */
+  #resume-content span[class*="rounded-full"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 17. Prevent mobile drawer from showing */
+  .fixed {
+    display: none !important;
   }
 }
 
