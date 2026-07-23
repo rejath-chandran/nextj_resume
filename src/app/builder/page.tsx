@@ -483,8 +483,8 @@ export default function BuilderPage() {
         className={
           "mx-auto grid max-w-[1600px] grid-cols-1 gap-6 sm:gap-8 px-4 py-6 sm:px-6 lg:px-8 transition-[grid-template-columns] duration-300 ease-in-out " +
           (navCollapsed
-            ? "lg:grid-cols-[76px_1fr_420px] xl:grid-cols-[76px_1fr_460px]"
-            : "lg:grid-cols-[230px_1fr_420px] xl:grid-cols-[250px_1fr_460px]")
+            ? "lg:grid-cols-[76px_1fr_520px] xl:grid-cols-[76px_1fr_580px] 2xl:grid-cols-[76px_1fr_640px]"
+            : "lg:grid-cols-[230px_1fr_420px] xl:grid-cols-[250px_1fr_460px] 2xl:grid-cols-[250px_1fr_520px]")
         }
       >
         
