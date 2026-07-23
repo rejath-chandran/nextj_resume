@@ -17,6 +17,7 @@ model PersonalInfo {
   portfolioUrl    String?
   summary         String?
   title           String?
+  resumeName      String?         @map("resume_name")
   userId          String?         @map("user_id")
   user            User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime        @default(now())

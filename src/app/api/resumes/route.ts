@@ -123,3 +123,28 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to delete resume" }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
+  try {
+    const data = await request.json();
+    const { id, resumeName } = data;
+
+    if (!id || typeof resumeName !== "string") {
+      return NextResponse.json({ error: "ID and resumeName are required" }, { status: 400 });
+    }
+
+    if (!(await ownsPersonalInfo(id, user.id))) return forbidden();
+
+    const resume = await prisma.personalInfo.update({
+      where: { id },
+      data: { resumeName: resumeName.trim() || null },
+    });
+    return NextResponse.json(resume);
+  } catch (error) {
+    console.error("Error renaming resume:", error);
+    return NextResponse.json({ error: "Failed to rename resume" }, { status: 500 });
+  }
+}

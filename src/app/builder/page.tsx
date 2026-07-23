@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef, type MutableRefObject } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
@@ -63,6 +63,64 @@ type Certification = { id: string; dbId?: number; name: string; issuer: string; 
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+/* -------------------------------- Auto-Save Hook -------------------------------- */
+
+/**
+ * Debounced auto-save hook. Calls `saveFn` after `delay` ms of inactivity.
+ * Returns { save, status } where status is 'idle' | 'saving' | 'saved' | 'error'.
+ */
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+function useAutoSave(
+  delay = 800,
+): {
+  trigger: (fn: () => Promise<void>) => void;
+  status: SaveStatus;
+} {
+  const [status, setStatus] = useState<SaveStatus>("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestFn = useRef<(() => Promise<void>) | null>(null);
+
+  const trigger = useCallback(
+    (fn: () => Promise<void>) => {
+      latestFn.current = fn;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(async () => {
+        if (!latestFn.current) return;
+        setStatus("saving");
+        try {
+          await latestFn.current();
+          setStatus("saved");
+          // Reset to idle after 2s
+          setTimeout(() => setStatus((s) => (s === "saved" ? "idle" : s)), 2000);
+        } catch {
+          setStatus("error");
+          setTimeout(() => setStatus((s) => (s === "error" ? "idle" : s)), 3000);
+        }
+      }, delay);
+    },
+    [delay],
+  );
+
+  // Cleanup on unmount
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  return { trigger, status };
+}
+
+/* Helper: save a single child record via PUT */
+async function saveChildRecord(
+  endpoint: string,
+  payload: Record<string, unknown>,
+) {
+  const res = await fetch(endpoint, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+}
+
 /* --------------------------------- Steps --------------------------------- */
 
 type StepKey = "personal" | "experience" | "education" | "skills" | "projects" | "certifications";
@@ -100,6 +158,7 @@ export default function BuilderPage() {
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const resumeContentRef = useRef<HTMLDivElement>(null);
+  const autoSave = useAutoSave(800);
 
   const [personal, setPersonal] = useState<PersonalInfo>({
     fullName: "",
@@ -353,8 +412,19 @@ export default function BuilderPage() {
               <p className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                 {personal.fullName ? `${personal.fullName}'s Resume` : "Resume Builder"}
               </p>
-              <p className="text-[11px] sm:text-xs text-slate-400 font-medium hidden sm:block">
-                Auto-saved in real time
+              <p className="text-[11px] sm:text-xs font-medium hidden sm:flex items-center gap-1.5">
+                {autoSave.status === "saving" && (
+                  <><Loader2 className="h-3 w-3 animate-spin text-violet-500" /><span className="text-violet-500">Saving…</span></>
+                )}
+                {autoSave.status === "saved" && (
+                  <><CheckCircle2 className="h-3 w-3 text-emerald-500" /><span className="text-emerald-500">All changes saved</span></>
+                )}
+                {autoSave.status === "error" && (
+                  <><span className="text-rose-500">Save failed — retrying…</span></>
+                )}
+                {autoSave.status === "idle" && (
+                  <span className="text-slate-400">Auto-saved in real time</span>
+                )}
               </p>
             </div>
           </div>
@@ -506,19 +576,19 @@ export default function BuilderPage() {
               <PersonalStep value={personal} onChange={handlePersonalChange} />
             )}
             {activeStep.key === "experience" && (
-              <ExperienceStep items={experience} onChange={setExperience} personalInfoId={personalInfoId} />
+              <ExperienceStep items={experience} onChange={setExperience} personalInfoId={personalInfoId} autoSave={autoSave} />
             )}
             {activeStep.key === "education" && (
-              <EducationStep items={education} onChange={setEducation} personalInfoId={personalInfoId} />
+              <EducationStep items={education} onChange={setEducation} personalInfoId={personalInfoId} autoSave={autoSave} />
             )}
             {activeStep.key === "skills" && (
-              <SkillsStep items={skills} onChange={setSkills} personalInfoId={personalInfoId} />
+              <SkillsStep items={skills} onChange={setSkills} personalInfoId={personalInfoId} autoSave={autoSave} />
             )}
             {activeStep.key === "projects" && (
-              <ProjectsStep items={projects} onChange={setProjects} personalInfoId={personalInfoId} />
+              <ProjectsStep items={projects} onChange={setProjects} personalInfoId={personalInfoId} autoSave={autoSave} />
             )}
             {activeStep.key === "certifications" && (
-              <CertificationsStep items={certifications} onChange={setCertifications} personalInfoId={personalInfoId} />
+              <CertificationsStep items={certifications} onChange={setCertifications} personalInfoId={personalInfoId} autoSave={autoSave} />
             )}
           </StepPanel>
 
@@ -800,11 +870,16 @@ function ExperienceStep({
   items,
   onChange,
   personalInfoId,
+  autoSave,
 }: {
   items: Experience[];
   onChange: (v: Experience[]) => void;
   personalInfoId: number | null;
+  autoSave: { trigger: (fn: () => Promise<void>) => void; status: SaveStatus };
 }) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   const add = async () => {
     const newItem: Experience = { id: uid(), role: "", company: "", period: "", description: "" };
     onChange([...items, newItem]);
@@ -818,6 +893,8 @@ function ExperienceStep({
         if (res.ok) {
           const dbData = await res.json();
           newItem.dbId = dbData.id;
+          // Update items with the new dbId so future saves work
+          onChange(itemsRef.current.map((it) => (it.id === newItem.id ? { ...it, dbId: dbData.id } : it)));
         }
       } catch (e) {
         console.error(e);
@@ -828,6 +905,22 @@ function ExperienceStep({
   const update = (id: string, patch: Partial<Experience>) => {
     const updated = items.map((it) => (it.id === id ? { ...it, ...patch } : it));
     onChange(updated);
+    // Auto-save the updated item
+    const item = updated.find((it) => it.id === id);
+    if (item?.dbId) {
+      const dbId = item.dbId;
+      autoSave.trigger(async () => {
+        const latest = itemsRef.current.find((it) => it.id === id);
+        if (!latest?.dbId) return;
+        await saveChildRecord("/api/experiences", {
+          id: dbId,
+          position: latest.role,
+          company: latest.company,
+          startDate: latest.period,
+          description: latest.description,
+        });
+      });
+    }
   };
 
   const remove = async (id: string) => {
@@ -900,11 +993,16 @@ function EducationStep({
   items,
   onChange,
   personalInfoId,
+  autoSave,
 }: {
   items: Education[];
   onChange: (v: Education[]) => void;
   personalInfoId: number | null;
+  autoSave: { trigger: (fn: () => Promise<void>) => void; status: SaveStatus };
 }) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   const add = async () => {
     const newItem: Education = { id: uid(), school: "", degree: "", period: "" };
     onChange([...items, newItem]);
@@ -918,6 +1016,7 @@ function EducationStep({
         if (res.ok) {
           const dbData = await res.json();
           newItem.dbId = dbData.id;
+          onChange(itemsRef.current.map((it) => (it.id === newItem.id ? { ...it, dbId: dbData.id } : it)));
         }
       } catch (e) {
         console.error(e);
@@ -926,7 +1025,22 @@ function EducationStep({
   };
 
   const update = (id: string, patch: Partial<Education>) => {
-    onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    const updated = items.map((it) => (it.id === id ? { ...it, ...patch } : it));
+    onChange(updated);
+    const item = updated.find((it) => it.id === id);
+    if (item?.dbId) {
+      const dbId = item.dbId;
+      autoSave.trigger(async () => {
+        const latest = itemsRef.current.find((it) => it.id === id);
+        if (!latest?.dbId) return;
+        await saveChildRecord("/api/education", {
+          id: dbId,
+          institution: latest.school,
+          degree: latest.degree,
+          graduationDate: latest.period,
+        });
+      });
+    }
   };
 
   const remove = async (id: string) => {
@@ -987,8 +1101,10 @@ function EducationStep({
 
 const SKILL_LEVELS: Skill["level"][] = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
-function SkillsStep({ items, onChange, personalInfoId }: { items: Skill[]; onChange: (v: Skill[]) => void; personalInfoId: number | null }) {
+function SkillsStep({ items, onChange, personalInfoId, autoSave }: { items: Skill[]; onChange: (v: Skill[]) => void; personalInfoId: number | null; autoSave: { trigger: (fn: () => Promise<void>) => void; status: SaveStatus } }) {
   const [draft, setDraft] = useState("");
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   const add = async () => {
     if (!draft.trim()) return;
@@ -1006,6 +1122,7 @@ function SkillsStep({ items, onChange, personalInfoId }: { items: Skill[]; onCha
         if (res.ok) {
           const dbData = await res.json();
           newItem.dbId = dbData.id;
+          onChange(itemsRef.current.map((it) => (it.id === newItem.id ? { ...it, dbId: dbData.id } : it)));
         }
       } catch (e) {
         console.error(e);
@@ -1013,14 +1130,28 @@ function SkillsStep({ items, onChange, personalInfoId }: { items: Skill[]; onCha
     }
   };
 
-  const cycleLevel = (id: string) =>
-    onChange(
-      items.map((it) =>
-        it.id === id
-          ? { ...it, level: SKILL_LEVELS[(SKILL_LEVELS.indexOf(it.level) + 1) % SKILL_LEVELS.length] }
-          : it
-      )
+  const cycleLevel = (id: string) => {
+    const updated = items.map((it) =>
+      it.id === id
+        ? { ...it, level: SKILL_LEVELS[(SKILL_LEVELS.indexOf(it.level) + 1) % SKILL_LEVELS.length] }
+        : it
     );
+    onChange(updated);
+    const item = updated.find((it) => it.id === id);
+    if (item?.dbId) {
+      const dbId = item.dbId;
+      autoSave.trigger(async () => {
+        const latest = itemsRef.current.find((it) => it.id === id);
+        if (!latest?.dbId) return;
+        await saveChildRecord("/api/skills", {
+          id: dbId,
+          skillName: latest.name,
+          category: "General",
+          proficiencyLevel: latest.level.toLowerCase(),
+        });
+      });
+    }
+  };
 
   const remove = async (id: string) => {
     const item = items.find(it => it.id === id);
@@ -1085,11 +1216,16 @@ function ProjectsStep({
   items,
   onChange,
   personalInfoId,
+  autoSave,
 }: {
   items: Project[];
   onChange: (v: Project[]) => void;
   personalInfoId: number | null;
+  autoSave: { trigger: (fn: () => Promise<void>) => void; status: SaveStatus };
 }) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   const add = async () => {
     const newItem: Project = { id: uid(), name: "", description: "", link: "" };
     onChange([...items, newItem]);
@@ -1103,6 +1239,7 @@ function ProjectsStep({
         if (res.ok) {
           const dbData = await res.json();
           newItem.dbId = dbData.id;
+          onChange(itemsRef.current.map((it) => (it.id === newItem.id ? { ...it, dbId: dbData.id } : it)));
         }
       } catch (e) {
         console.error(e);
@@ -1110,8 +1247,24 @@ function ProjectsStep({
     }
   };
 
-  const update = (id: string, patch: Partial<Project>) =>
-    onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  const update = (id: string, patch: Partial<Project>) => {
+    const updated = items.map((it) => (it.id === id ? { ...it, ...patch } : it));
+    onChange(updated);
+    const item = updated.find((it) => it.id === id);
+    if (item?.dbId) {
+      const dbId = item.dbId;
+      autoSave.trigger(async () => {
+        const latest = itemsRef.current.find((it) => it.id === id);
+        if (!latest?.dbId) return;
+        await saveChildRecord("/api/projects", {
+          id: dbId,
+          name: latest.name,
+          description: latest.description,
+          technologies: latest.link,
+        });
+      });
+    }
+  };
 
   const remove = async (id: string) => {
     const item = items.find(it => it.id === id);
@@ -1176,11 +1329,16 @@ function CertificationsStep({
   items,
   onChange,
   personalInfoId,
+  autoSave,
 }: {
   items: Certification[];
   onChange: (v: Certification[]) => void;
   personalInfoId: number | null;
+  autoSave: { trigger: (fn: () => Promise<void>) => void; status: SaveStatus };
 }) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   const add = async () => {
     const newItem: Certification = { id: uid(), name: "", issuer: "", year: "" };
     onChange([...items, newItem]);
@@ -1194,6 +1352,7 @@ function CertificationsStep({
         if (res.ok) {
           const dbData = await res.json();
           newItem.dbId = dbData.id;
+          onChange(itemsRef.current.map((it) => (it.id === newItem.id ? { ...it, dbId: dbData.id } : it)));
         }
       } catch (e) {
         console.error(e);
@@ -1201,8 +1360,24 @@ function CertificationsStep({
     }
   };
 
-  const update = (id: string, patch: Partial<Certification>) =>
-    onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  const update = (id: string, patch: Partial<Certification>) => {
+    const updated = items.map((it) => (it.id === id ? { ...it, ...patch } : it));
+    onChange(updated);
+    const item = updated.find((it) => it.id === id);
+    if (item?.dbId) {
+      const dbId = item.dbId;
+      autoSave.trigger(async () => {
+        const latest = itemsRef.current.find((it) => it.id === id);
+        if (!latest?.dbId) return;
+        await saveChildRecord("/api/certifications", {
+          id: dbId,
+          name: latest.name,
+          issuingOrganization: latest.issuer,
+          issueDate: latest.year,
+        });
+      });
+    }
+  };
 
   const remove = async (id: string) => {
     const item = items.find(it => it.id === id);
