@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -23,6 +23,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   GripVertical,
+  Loader2,
+  Share2,
 } from "lucide-react";
 
 import { FadeIn, GlowCard, Magnetic, ProgressRing, StepPanel } from "@/components/builder/animated";
@@ -37,6 +39,7 @@ import {
 import TemplateSelector, { type TemplateName } from "@/components/builder/TemplateSelector";
 import ProfessionalTemplate from "@/components/builder/templates/ProfessionalTemplate";
 import CleanSidebarTemplate from "@/components/builder/templates/CleanSidebarTemplate";
+import { exportResumePdf } from "@/lib/export-pdf";
 
 /* --------------------------------- Types --------------------------------- */
 
@@ -91,6 +94,8 @@ export default function BuilderPage() {
   const [sectionOrder, setSectionOrder] = useState<SectionStep[]>(DEFAULT_STEPS);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const resumeContentRef = useRef<HTMLDivElement>(null);
 
   const [personal, setPersonal] = useState<PersonalInfo>({
     fullName: "",
@@ -105,6 +110,32 @@ export default function BuilderPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportResumePdf({
+        data: {
+          personal,
+          experience,
+          education,
+          skills,
+          projects,
+          certifications,
+          sectionOrder: sectionOrder.map((s) => s.key),
+          template: selectedTemplate,
+        },
+        filename: personal.fullName
+          ? `${personal.fullName.replace(/\s+/g, "_")}_Resume`
+          : "Resume",
+      });
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting, personal, experience, education, skills, projects, certifications, sectionOrder, selectedTemplate]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -334,12 +365,17 @@ export default function BuilderPage() {
 
             <Magnetic strength={0.2}>
               <PrimaryButton 
-                onClick={() => window.print()} 
-                className="bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-500/20"
+                onClick={handleExportPdf}
+                disabled={exporting}
+                className="bg-violet-600 hover:bg-violet-700 shadow-md shadow-violet-500/20 disabled:opacity-70"
               >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export PDF</span>
-                <span className="sm:hidden">Export</span>
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">{exporting ? "Generating…" : "Export PDF"}</span>
+                <span className="sm:hidden">{exporting ? "…" : "Export"}</span>
               </PrimaryButton>
             </Magnetic>
           </div>
@@ -490,9 +526,9 @@ export default function BuilderPage() {
                 <ChevronRight className="h-4 w-4" />
               </PrimaryButton>
             ) : (
-              <PrimaryButton onClick={() => window.print()} className="bg-violet-600 hover:bg-violet-700">
-                <Download className="h-4 w-4" />
-                <span>Export Final PDF</span>
+              <PrimaryButton onClick={handleExportPdf} disabled={exporting} className="bg-violet-600 hover:bg-violet-700 disabled:opacity-70">
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                <span>{exporting ? "Generating PDF…" : "Export Final PDF"}</span>
               </PrimaryButton>
             )}
           </div>
@@ -522,6 +558,7 @@ export default function BuilderPage() {
               certifications={certifications}
               template={selectedTemplate}
               sectionOrder={sectionKeys}
+              contentRef={resumeContentRef}
             />
           </div>
         </aside>
@@ -554,11 +591,12 @@ export default function BuilderPage() {
               certifications={certifications}
               template={selectedTemplate}
               sectionOrder={sectionKeys}
+              contentRef={resumeContentRef}
             />
             <div className="pt-2">
-              <PrimaryButton onClick={() => window.print()} className="w-full bg-violet-600 hover:bg-violet-700">
-                <Download className="h-4 w-4" />
-                Download PDF
+              <PrimaryButton onClick={handleExportPdf} disabled={exporting} className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-70">
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {exporting ? "Generating PDF…" : "Download PDF"}
               </PrimaryButton>
             </div>
           </div>
@@ -1233,6 +1271,7 @@ function ResumePreview({
   certifications,
   template = "classic",
   sectionOrder,
+  contentRef,
 }: {
   personal: PersonalInfo;
   experience: Experience[];
@@ -1242,6 +1281,7 @@ function ResumePreview({
   certifications: Certification[];
   template?: TemplateName;
   sectionOrder: StepKey[];
+  contentRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const templateProps = { personal, experience, education, skills, projects, certifications, sectionOrder };
 
@@ -1254,7 +1294,7 @@ function ResumePreview({
         </span>
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
       </div>
-      <div id="resume-content" className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
+      <div ref={contentRef} id="resume-content" className="max-h-[calc(100vh-10rem)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 text-slate-900 shadow-inner leading-normal scrollbar-none">
         {template === "professional" && <ProfessionalTemplate {...templateProps} />}
         {template === "clean-sidebar" && <CleanSidebarTemplate {...templateProps} />}
         {template === "classic" && <ClassicTemplate {...templateProps} />}
