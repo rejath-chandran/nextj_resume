@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import {
   ArrowLeft,
   Plus,
@@ -85,6 +87,8 @@ export type { StepKey, SectionStep };
 /* ------------------------------- Page ------------------------------- */
 
 export default function BuilderPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [personalInfoId, setPersonalInfoId] = useState<number | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -113,6 +117,10 @@ export default function BuilderPage() {
 
   const handleExportPdf = useCallback(async () => {
     if (exporting) return;
+    if (!session) {
+      window.location.href = "/login?redirect=/builder";
+      return;
+    }
     setExporting(true);
     try {
       await exportResumePdf({
@@ -212,6 +220,10 @@ export default function BuilderPage() {
   };
 
   const savePersonalInfo = async (updated: PersonalInfo) => {
+    if (!session) {
+      window.location.href = "/login?redirect=/builder";
+      return;
+    }
     try {
       if (personalInfoId) {
         await fetch("/api/resumes", {

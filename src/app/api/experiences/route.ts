@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import {
+  getSessionUser,
+  unauthorized,
+  forbidden,
+  ownsPersonalInfo,
+  ownsChildRecord,
+} from "@/lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const personalInfoId = searchParams.get("personalInfoId");
-
-    if (personalInfoId) {
-      const experiences = await prisma.experience.findMany({
-        where: { personalInfoId: parseInt(personalInfoId) },
-        orderBy: { startDate: "desc" },
-      });
-      return NextResponse.json(experiences);
+    const personalInfoId = request.nextUrl.searchParams.get("personalInfoId");
+    if (!personalInfoId) {
+      return NextResponse.json({ error: "personalInfoId is required" }, { status: 400 });
     }
+    const pid = parseInt(personalInfoId);
+    if (!(await ownsPersonalInfo(pid, user.id))) return forbidden();
 
-    return NextResponse.json({ error: "personalInfoId is required" }, { status: 400 });
+    const experiences = await prisma.experience.findMany({
+      where: { personalInfoId: pid },
+      orderBy: { startDate: "desc" },
+    });
+    return NextResponse.json(experiences);
   } catch (error) {
     console.error("Error fetching experiences:", error);
     return NextResponse.json({ error: "Failed to fetch experiences" }, { status: 500 });
@@ -22,11 +32,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const data = await request.json();
+    const pid = data.personalInfoId;
+    if (!(await ownsPersonalInfo(pid, user.id))) return forbidden();
+
     const experience = await prisma.experience.create({
       data: {
-        personalInfoId: data.personalInfoId,
+        personalInfoId: pid,
         company: data.company,
         position: data.position,
         location: data.location || null,
@@ -44,8 +60,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const data = await request.json();
+    if (!(await ownsChildRecord("experience", data.id, user.id))) return forbidden();
+
     const experience = await prisma.experience.update({
       where: { id: data.id },
       data: {
@@ -66,17 +87,16 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get("id");
-    
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
 
-    await prisma.experience.delete({
-      where: { id: parseInt(id) },
-    });
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    const numericId = parseInt(id);
+    if (!(await ownsChildRecord("experience", numericId, user.id))) return forbidden();
+
+    await prisma.experience.delete({ where: { id: numericId } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting experience:", error);

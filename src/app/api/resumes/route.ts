@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import {
+  getSessionUser,
+  unauthorized,
+  forbidden,
+  ownsPersonalInfo,
+} from "@/lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
@@ -17,10 +26,15 @@ export async function GET(request: NextRequest) {
           certifications: { orderBy: { issueDate: "desc" } },
         },
       });
+
+      if (!resume || resume.userId !== user.id) {
+        return forbidden();
+      }
       return NextResponse.json(resume);
     }
 
     const resumes = await prisma.personalInfo.findMany({
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(resumes);
@@ -31,6 +45,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const data = await request.json();
     const resume = await prisma.personalInfo.create({
@@ -43,6 +60,8 @@ export async function POST(request: NextRequest) {
         githubUrl: data.githubUrl || null,
         portfolioUrl: data.portfolioUrl || null,
         summary: data.summary || null,
+        title: data.title || null,
+        userId: user.id,
       },
     });
     return NextResponse.json(resume);
@@ -53,10 +72,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const data = await request.json();
+    const id = data.id;
+    if (!(await ownsPersonalInfo(id, user.id))) return forbidden();
+
     const resume = await prisma.personalInfo.update({
-      where: { id: data.id },
+      where: { id },
       data: {
         fullName: data.fullName,
         email: data.email,
@@ -66,6 +91,7 @@ export async function PUT(request: NextRequest) {
         githubUrl: data.githubUrl || null,
         portfolioUrl: data.portfolioUrl || null,
         summary: data.summary || null,
+        title: data.title || null,
       },
     });
     return NextResponse.json(resume);
@@ -76,17 +102,21 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
-    
+
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await prisma.personalInfo.delete({
-      where: { id: parseInt(id) },
-    });
+    const numericId = parseInt(id);
+    if (!(await ownsPersonalInfo(numericId, user.id))) return forbidden();
+
+    await prisma.personalInfo.delete({ where: { id: numericId } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting resume:", error);
