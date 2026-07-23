@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  GripVertical,
 } from "lucide-react";
 
 import { FadeIn, GlowCard, Magnetic, ProgressRing, StepPanel } from "@/components/builder/animated";
@@ -59,16 +60,24 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 /* --------------------------------- Steps --------------------------------- */
 
-const STEPS = [
+type StepKey = "personal" | "experience" | "education" | "skills" | "projects" | "certifications";
+
+type SectionStep = {
+  key: StepKey;
+  label: string;
+  icon: typeof User;
+};
+
+const DEFAULT_STEPS: SectionStep[] = [
   { key: "personal", label: "Personal info", icon: User },
   { key: "experience", label: "Experience", icon: Briefcase },
   { key: "education", label: "Education", icon: GraduationCap },
   { key: "skills", label: "Skills", icon: Sparkles },
   { key: "projects", label: "Projects", icon: FolderKanban },
   { key: "certifications", label: "Certifications", icon: Award },
-] as const;
+];
 
-type StepKey = (typeof STEPS)[number]["key"];
+export type { StepKey, SectionStep };
 
 /* ------------------------------- Page ------------------------------- */
 
@@ -79,6 +88,9 @@ export default function BuilderPage() {
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateName>("classic");
+  const [sectionOrder, setSectionOrder] = useState<SectionStep[]>(DEFAULT_STEPS);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   const [personal, setPersonal] = useState<PersonalInfo>({
     fullName: "",
@@ -198,7 +210,7 @@ export default function BuilderPage() {
     savePersonalInfo(v);
   };
 
-  const activeStep = STEPS[stepIndex];
+  const activeStep = sectionOrder[stepIndex];
 
   const completion = useMemo(() => {
     const flags = [
@@ -216,6 +228,54 @@ export default function BuilderPage() {
     setDirection(index > stepIndex ? 1 : -1);
     setStepIndex(index);
   }
+
+  /* --- Drag & Drop reorder --- */
+  const handleDragStart = useCallback((index: number) => {
+    setDragIndex(index);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTargetIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDropTargetIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === toIndex) {
+      setDragIndex(null);
+      setDropTargetIndex(null);
+      return;
+    }
+    setSectionOrder((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+    // Keep the active step pointing at the same section after reorder
+    const currentKey = sectionOrder[stepIndex]?.key;
+    if (currentKey) {
+      setSectionOrder((prev) => {
+        const newIdx = prev.findIndex((s) => s.key === currentKey);
+        if (newIdx !== -1) setStepIndex(newIdx);
+        return prev;
+      });
+    }
+    setDragIndex(null);
+    setDropTargetIndex(null);
+  }, [dragIndex, sectionOrder, stepIndex]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDropTargetIndex(null);
+  }, []);
+
+  const sectionKeys = useMemo(() => sectionOrder.map((s) => s.key), [sectionOrder]);
 
   function stepIsComplete(key: StepKey) {
     switch (key) {
@@ -287,7 +347,7 @@ export default function BuilderPage() {
 
         {/* Mobile Horizontal Step Chips */}
         <div className="mx-auto flex max-w-[1600px] gap-1.5 overflow-x-auto px-4 pb-3 pt-1 sm:px-6 lg:hidden scrollbar-none">
-          {STEPS.map((step, i) => (
+          {sectionOrder.map((step, i) => (
             <StepChip
               key={step.key}
               step={step}
@@ -331,9 +391,24 @@ export default function BuilderPage() {
                 )}
               </button>
             </div>
-            <ol className="space-y-1">
-              {STEPS.map((step, i) => (
-                <li key={step.key}>
+            <ol className="space-y-0.5">
+              {sectionOrder.map((step, i) => (
+                <li
+                  key={step.key}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={(e) => handleDragOver(e, i)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, i)}
+                  onDragEnd={handleDragEnd}
+                  className={
+                    "relative transition-transform duration-150 " +
+                    (dragIndex === i ? "opacity-40 scale-95" : "") +
+                    (dropTargetIndex === i && dragIndex !== i
+                      ? " border-t-2 border-violet-500 rounded-t-lg"
+                      : "")
+                  }
+                >
                   <StepRailItem
                     step={step}
                     index={i}
@@ -341,6 +416,7 @@ export default function BuilderPage() {
                     done={stepIsComplete(step.key)}
                     collapsed={navCollapsed}
                     onClick={() => goTo(i)}
+                    draggable
                   />
                 </li>
               ))}
@@ -408,9 +484,9 @@ export default function BuilderPage() {
               <ArrowLeft className="h-4 w-4" />
               <span>Back</span>
             </GhostButton>
-            {stepIndex < STEPS.length - 1 ? (
+            {stepIndex < sectionOrder.length - 1 ? (
               <PrimaryButton onClick={() => goTo(stepIndex + 1)} className="bg-violet-600 hover:bg-violet-700">
-                <span>Next: {STEPS[stepIndex + 1].label}</span>
+                <span>Next: {sectionOrder[stepIndex + 1].label}</span>
                 <ChevronRight className="h-4 w-4" />
               </PrimaryButton>
             ) : (
@@ -445,6 +521,7 @@ export default function BuilderPage() {
               projects={projects}
               certifications={certifications}
               template={selectedTemplate}
+              sectionOrder={sectionKeys}
             />
           </div>
         </aside>
@@ -476,6 +553,7 @@ export default function BuilderPage() {
               projects={projects}
               certifications={certifications}
               template={selectedTemplate}
+              sectionOrder={sectionKeys}
             />
             <div className="pt-2">
               <PrimaryButton onClick={() => window.print()} className="w-full bg-violet-600 hover:bg-violet-700">
@@ -499,13 +577,15 @@ function StepRailItem({
   done,
   collapsed,
   onClick,
+  draggable: isDraggable,
 }: {
-  step: (typeof STEPS)[number];
+  step: SectionStep;
   index: number;
   active: boolean;
   done: boolean;
   collapsed?: boolean;
   onClick: () => void;
+  draggable?: boolean;
 }) {
   const Icon = step.icon;
   return (
@@ -513,14 +593,25 @@ function StepRailItem({
       onClick={onClick}
       title={collapsed ? step.label : undefined}
       className={
-        "group flex w-full items-center gap-3 rounded-2xl py-3 text-left transition-all duration-200 " +
-        (collapsed ? "justify-center px-0" : "px-3.5") +
+        "group flex w-full items-center gap-2 rounded-2xl py-3 text-left transition-all duration-200 cursor-grab active:cursor-grabbing " +
+        (collapsed ? "justify-center px-0" : "px-3") +
         " " +
         (active
           ? "bg-slate-900 text-white shadow-md shadow-slate-900/10 font-semibold"
           : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium")
       }
     >
+      {/* Drag handle */}
+      {isDraggable && !collapsed && (
+        <GripVertical
+          className={
+            "h-3.5 w-3.5 shrink-0 transition-opacity " +
+            (active
+              ? "text-white/40 group-hover:text-white/70"
+              : "text-slate-300 group-hover:text-slate-500")
+          }
+        />
+      )}
       <span
         className={
           "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-all " +
@@ -550,7 +641,7 @@ function StepChip({
   done,
   onClick,
 }: {
-  step: (typeof STEPS)[number];
+  step: SectionStep;
   index: number;
   active: boolean;
   done: boolean;
@@ -1141,6 +1232,7 @@ function ResumePreview({
   projects,
   certifications,
   template = "classic",
+  sectionOrder,
 }: {
   personal: PersonalInfo;
   experience: Experience[];
@@ -1149,8 +1241,9 @@ function ResumePreview({
   projects: Project[];
   certifications: Certification[];
   template?: TemplateName;
+  sectionOrder: StepKey[];
 }) {
-  const templateProps = { personal, experience, education, skills, projects, certifications };
+  const templateProps = { personal, experience, education, skills, projects, certifications, sectionOrder };
 
   return (
     <div id="resume-preview" className="rounded-3xl bg-slate-900 p-2.5 sm:p-3 shadow-xl">
@@ -1179,6 +1272,7 @@ function ClassicTemplate({
   skills,
   projects,
   certifications,
+  sectionOrder,
 }: {
   personal: PersonalInfo;
   experience: Experience[];
@@ -1186,114 +1280,116 @@ function ClassicTemplate({
   skills: Skill[];
   projects: Project[];
   certifications: Certification[];
+  sectionOrder: StepKey[];
 }) {
-  return (
-    <>
-      {/* Header Section */}
-      <div className="border-b border-slate-200/80 pb-5">
-        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-          {personal.fullName || "Your Full Name"}
-        </h2>
-        <p className="text-sm font-bold text-violet-600 mt-0.5">{personal.title || "Your Professional Title"}</p>
-        <p className="mt-2 text-xs text-slate-500 font-medium">
-          {[personal.email, personal.phone, personal.location].filter(Boolean).join("  ·  ") ||
-            "email@example.com  ·  +1 (555) 000-0000  ·  City, Country"}
-        </p>
-        {personal.summary && (
-          <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 font-normal">
-            {personal.summary}
-          </p>
-        )}
-      </div>
-
-      {/* Work Experience */}
-      {experience.length > 0 && (
-        <PreviewSection title="Work Experience">
-          <div className="space-y-4">
-            {experience.map((item) => (
-              <div key={item.id}>
-                <div className="flex items-baseline justify-between gap-3">
+  const renderSection = (key: StepKey) => {
+    switch (key) {
+      case "personal":
+        return (
+          <div key="personal" className="border-b border-slate-200/80 pb-5">
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+              {personal.fullName || "Your Full Name"}
+            </h2>
+            <p className="text-sm font-bold text-violet-600 mt-0.5">{personal.title || "Your Professional Title"}</p>
+            <p className="mt-2 text-xs text-slate-500 font-medium">
+              {[personal.email, personal.phone, personal.location].filter(Boolean).join("  ·  ") ||
+                "email@example.com  ·  +1 (555) 000-0000  ·  City, Country"}
+            </p>
+            {personal.summary && (
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 font-normal">
+                {personal.summary}
+              </p>
+            )}
+          </div>
+        );
+      case "experience":
+        return experience.length > 0 ? (
+          <PreviewSection key="experience" title="Work Experience">
+            <div className="space-y-4">
+              {experience.map((item) => (
+                <div key={item.id}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                      {item.role || "Job Position"} {item.company && <span className="font-semibold text-slate-500">· {item.company}</span>}
+                    </p>
+                    <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
+                  </div>
+                  {item.description && (
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600 font-normal">{item.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </PreviewSection>
+        ) : null;
+      case "education":
+        return education.length > 0 ? (
+          <PreviewSection key="education" title="Education">
+            <div className="space-y-3">
+              {education.map((item) => (
+                <div key={item.id} className="flex items-baseline justify-between gap-3">
                   <p className="text-xs sm:text-sm font-bold text-slate-900">
-                    {item.role || "Job Position"} {item.company && <span className="font-semibold text-slate-500">· {item.company}</span>}
+                    {item.school || "University / College"}
+                    {item.degree && <span className="font-normal text-slate-600"> — {item.degree}</span>}
                   </p>
                   <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
                 </div>
-                {item.description && (
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600 font-normal">{item.description}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      )}
+              ))}
+            </div>
+          </PreviewSection>
+        ) : null;
+      case "skills":
+        return skills.length > 0 ? (
+          <PreviewSection key="skills" title="Skills & Tools">
+            <div className="flex flex-wrap gap-1.5">
+              {skills.map((s) => (
+                <span
+                  key={s.id}
+                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700"
+                >
+                  {s.name}
+                </span>
+              ))}
+            </div>
+          </PreviewSection>
+        ) : null;
+      case "projects":
+        return projects.length > 0 ? (
+          <PreviewSection key="projects" title="Projects">
+            <div className="space-y-3">
+              {projects.map((p) => (
+                <div key={p.id}>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    {p.name || "Project Title"} {p.link && <span className="font-normal text-violet-600 text-xs">({p.link})</span>}
+                  </p>
+                  {p.description && <p className="mt-0.5 text-xs text-slate-600 font-normal leading-relaxed">{p.description}</p>}
+                </div>
+              ))}
+            </div>
+          </PreviewSection>
+        ) : null;
+      case "certifications":
+        return certifications.length > 0 ? (
+          <PreviewSection key="certifications" title="Certifications">
+            <div className="space-y-2">
+              {certifications.map((c) => (
+                <div key={c.id} className="flex items-baseline justify-between gap-3 text-xs">
+                  <p className="font-bold text-slate-800">
+                    {c.name || "Certification"}
+                    {c.issuer && <span className="font-normal text-slate-500"> · {c.issuer}</span>}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-medium">{c.year}</p>
+                </div>
+              ))}
+            </div>
+          </PreviewSection>
+        ) : null;
+      default:
+        return null;
+    }
+  };
 
-      {/* Education */}
-      {education.length > 0 && (
-        <PreviewSection title="Education">
-          <div className="space-y-3">
-            {education.map((item) => (
-              <div key={item.id} className="flex items-baseline justify-between gap-3">
-                <p className="text-xs sm:text-sm font-bold text-slate-900">
-                  {item.school || "University / College"}
-                  {item.degree && <span className="font-normal text-slate-600"> — {item.degree}</span>}
-                </p>
-                <p className="shrink-0 text-[11px] font-medium text-slate-400">{item.period}</p>
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      )}
-
-      {/* Skills */}
-      {skills.length > 0 && (
-        <PreviewSection title="Skills & Tools">
-          <div className="flex flex-wrap gap-1.5">
-            {skills.map((s) => (
-              <span
-                key={s.id}
-                className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-slate-700"
-              >
-                {s.name}
-              </span>
-            ))}
-          </div>
-        </PreviewSection>
-      )}
-
-      {/* Featured Projects */}
-      {projects.length > 0 && (
-        <PreviewSection title="Projects">
-          <div className="space-y-3">
-            {projects.map((p) => (
-              <div key={p.id}>
-                <p className="text-xs sm:text-sm font-bold text-slate-900">
-                  {p.name || "Project Title"} {p.link && <span className="font-normal text-violet-600 text-xs">({p.link})</span>}
-                </p>
-                {p.description && <p className="mt-0.5 text-xs text-slate-600 font-normal leading-relaxed">{p.description}</p>}
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      )}
-
-      {/* Certifications */}
-      {certifications.length > 0 && (
-        <PreviewSection title="Certifications">
-          <div className="space-y-2">
-            {certifications.map((c) => (
-              <div key={c.id} className="flex items-baseline justify-between gap-3 text-xs">
-                <p className="font-bold text-slate-800">
-                  {c.name || "Certification"}
-                  {c.issuer && <span className="font-normal text-slate-500"> · {c.issuer}</span>}
-                </p>
-                <p className="text-[11px] text-slate-400 font-medium">{c.year}</p>
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      )}
-    </>
-  );
+  return <>{sectionOrder.map(renderSection)}</>;
 }
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
+import type { StepKey } from "@/app/builder/page";
 
 /* ---------- Types (matches builder page types) ---------- */
 
@@ -28,6 +29,7 @@ interface TemplateProps {
   skills: Skill[];
   projects: Project[];
   certifications: Certification[];
+  sectionOrder: StepKey[];
 }
 
 /* ---------- Skill Dots ---------- */
@@ -79,162 +81,171 @@ export default function CleanSidebarTemplate({
   skills,
   projects,
   certifications,
+  sectionOrder,
 }: TemplateProps) {
+  const renderSection = (key: StepKey) => {
+    switch (key) {
+      case "personal":
+        return (
+          <div key="personal" className="text-center pb-3 border-b border-slate-200">
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+              {personal.fullName || "Your Full Name"}
+            </h1>
+            {personal.title && (
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">{personal.title}</p>
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 text-[10px] text-slate-600">
+              {personal.email && (
+                <span className="inline-flex items-center gap-1">
+                  <Mail className="h-2.5 w-2.5 text-slate-400" />
+                  {personal.email}
+                </span>
+              )}
+              {personal.phone && (
+                <span className="inline-flex items-center gap-1">
+                  <Phone className="h-2.5 w-2.5 text-slate-400" />
+                  {personal.phone}
+                </span>
+              )}
+              {personal.location && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-2.5 w-2.5 text-slate-400" />
+                  {personal.location}
+                </span>
+              )}
+            </div>
+            {personal.summary && (
+              <SectionRow label="Professional Summary">
+                <p className="text-[10.5px] leading-[1.6] text-slate-700">{personal.summary}</p>
+              </SectionRow>
+            )}
+          </div>
+        );
+
+      case "skills":
+        return skills.length > 0 ? (
+          <SectionRow key="skills" label="Technical Skills">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {skills.map((skill) => (
+                <div key={skill.id}>
+                  <p className="font-bold text-[10px] text-slate-800">{skill.name}</p>
+                  <p className="text-[9px] text-slate-500 capitalize">{skill.level}</p>
+                  <SkillDots level={skill.level} />
+                </div>
+              ))}
+            </div>
+          </SectionRow>
+        ) : null;
+
+      case "education":
+        return education.length > 0 ? (
+          <SectionRow key="education" label="Education">
+            <div className="space-y-2">
+              {education.map((item) => (
+                <div key={item.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-[11px] text-slate-900">{item.school || "Institution"}</p>
+                      <p className="text-[10px] text-slate-600">{item.degree}</p>
+                    </div>
+                    {item.period && (
+                      <span className="shrink-0 text-[10px] text-slate-500 font-medium">{item.period}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionRow>
+        ) : null;
+
+      case "experience":
+        return experience.length > 0 ? (
+          <SectionRow key="experience" label="Professional Experience">
+            <div className="space-y-3">
+              {experience.map((item) => (
+                <div key={item.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-[11px] text-slate-900">{item.company || "Company"}</p>
+                      <p className="text-[10px] text-slate-600 italic">{item.role}</p>
+                    </div>
+                    {item.period && (
+                      <span className="shrink-0 text-[10px] text-slate-500 font-medium whitespace-nowrap">{item.period}</span>
+                    )}
+                  </div>
+                  {item.description && (
+                    <ul className="mt-1 space-y-0.5 text-[10.5px] leading-[1.5] text-slate-700">
+                      {item.description.split("\n").filter(Boolean).map((line, idx) => (
+                        <li key={idx} className="flex gap-1.5">
+                          <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+                          <span>{line.replace(/^[-•]\s*/, "")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionRow>
+        ) : null;
+
+      case "projects":
+        return projects.length > 0 ? (
+          <SectionRow key="projects" label="Projects">
+            <div className="space-y-2">
+              {projects.map((p) => (
+                <div key={p.id}>
+                  <p className="font-bold text-[11px] text-slate-900">
+                    {p.name || "Project Title"}
+                    {p.link && (
+                      <span className="ml-1.5 font-normal text-[10px] text-slate-500">({p.link})</span>
+                    )}
+                  </p>
+                  {p.description && (
+                    <ul className="mt-0.5 space-y-0.5 text-[10.5px] leading-[1.5] text-slate-700">
+                      {p.description.split("\n").filter(Boolean).map((line, idx) => (
+                        <li key={idx} className="flex gap-1.5">
+                          <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+                          <span>{line.replace(/^[-•]\s*/, "")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionRow>
+        ) : null;
+
+      case "certifications":
+        return certifications.length > 0 ? (
+          <SectionRow key="certifications" label="Certifications">
+            <div className="space-y-1.5">
+              {certifications.map((c) => (
+                <div key={c.id} className="flex items-baseline justify-between gap-2">
+                  <p className="text-[11px] font-bold text-slate-800">
+                    {c.name || "Certification"}
+                    {c.issuer && (
+                      <span className="font-normal text-slate-500"> · {c.issuer}</span>
+                    )}
+                  </p>
+                  {c.year && (
+                    <span className="shrink-0 text-[10px] text-slate-500">{c.year}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionRow>
+        ) : null;
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="font-[system-ui,_-apple-system,_sans-serif] text-slate-900 leading-normal text-[11px]">
-      {/* ===== Header ===== */}
-      <div className="text-center pb-3 border-b border-slate-200">
-        <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
-          {personal.fullName || "Your Full Name"}
-        </h1>
-        {personal.title && (
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">{personal.title}</p>
-        )}
-        {/* Contact row */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 text-[10px] text-slate-600">
-          {personal.email && (
-            <span className="inline-flex items-center gap-1">
-              <Mail className="h-2.5 w-2.5 text-slate-400" />
-              {personal.email}
-            </span>
-          )}
-          {personal.phone && (
-            <span className="inline-flex items-center gap-1">
-              <Phone className="h-2.5 w-2.5 text-slate-400" />
-              {personal.phone}
-            </span>
-          )}
-          {personal.location && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-2.5 w-2.5 text-slate-400" />
-              {personal.location}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ===== Professional Summary ===== */}
-      {personal.summary && (
-        <SectionRow label="Professional Summary">
-          <p className="text-[10.5px] leading-[1.6] text-slate-700">{personal.summary}</p>
-        </SectionRow>
-      )}
-
-      {/* ===== Technical Skills ===== */}
-      {skills.length > 0 && (
-        <SectionRow label="Technical Skills">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {skills.map((skill) => (
-              <div key={skill.id}>
-                <p className="font-bold text-[10px] text-slate-800">{skill.name}</p>
-                <p className="text-[9px] text-slate-500 capitalize">{skill.level}</p>
-                <SkillDots level={skill.level} />
-              </div>
-            ))}
-          </div>
-        </SectionRow>
-      )}
-
-      {/* ===== Education ===== */}
-      {education.length > 0 && (
-        <SectionRow label="Education">
-          <div className="space-y-2">
-            {education.map((item) => (
-              <div key={item.id}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-[11px] text-slate-900">{item.school || "Institution"}</p>
-                    <p className="text-[10px] text-slate-600">{item.degree}</p>
-                  </div>
-                  {item.period && (
-                    <span className="shrink-0 text-[10px] text-slate-500 font-medium">{item.period}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionRow>
-      )}
-
-      {/* ===== Professional Experience ===== */}
-      {experience.length > 0 && (
-        <SectionRow label="Professional Experience">
-          <div className="space-y-3">
-            {experience.map((item) => (
-              <div key={item.id}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-[11px] text-slate-900">{item.company || "Company"}</p>
-                    <p className="text-[10px] text-slate-600 italic">{item.role}</p>
-                  </div>
-                  {item.period && (
-                    <span className="shrink-0 text-[10px] text-slate-500 font-medium whitespace-nowrap">{item.period}</span>
-                  )}
-                </div>
-                {item.description && (
-                  <ul className="mt-1 space-y-0.5 text-[10.5px] leading-[1.5] text-slate-700">
-                    {item.description.split("\n").filter(Boolean).map((line, idx) => (
-                      <li key={idx} className="flex gap-1.5">
-                        <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-slate-400" />
-                        <span>{line.replace(/^[-•]\s*/, "")}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </SectionRow>
-      )}
-
-      {/* ===== Projects ===== */}
-      {projects.length > 0 && (
-        <SectionRow label="Projects">
-          <div className="space-y-2">
-            {projects.map((p) => (
-              <div key={p.id}>
-                <p className="font-bold text-[11px] text-slate-900">
-                  {p.name || "Project Title"}
-                  {p.link && (
-                    <span className="ml-1.5 font-normal text-[10px] text-slate-500">({p.link})</span>
-                  )}
-                </p>
-                {p.description && (
-                  <ul className="mt-0.5 space-y-0.5 text-[10.5px] leading-[1.5] text-slate-700">
-                    {p.description.split("\n").filter(Boolean).map((line, idx) => (
-                      <li key={idx} className="flex gap-1.5">
-                        <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-slate-400" />
-                        <span>{line.replace(/^[-•]\s*/, "")}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </SectionRow>
-      )}
-
-      {/* ===== Certifications ===== */}
-      {certifications.length > 0 && (
-        <SectionRow label="Certifications">
-          <div className="space-y-1.5">
-            {certifications.map((c) => (
-              <div key={c.id} className="flex items-baseline justify-between gap-2">
-                <p className="text-[11px] font-bold text-slate-800">
-                  {c.name || "Certification"}
-                  {c.issuer && (
-                    <span className="font-normal text-slate-500"> · {c.issuer}</span>
-                  )}
-                </p>
-                {c.year && (
-                  <span className="shrink-0 text-[10px] text-slate-500">{c.year}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </SectionRow>
-      )}
+      {sectionOrder.map(renderSection)}
     </div>
   );
 }
