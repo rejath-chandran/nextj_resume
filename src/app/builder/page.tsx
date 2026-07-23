@@ -573,7 +573,12 @@ export default function BuilderPage() {
         <main className="min-w-0">
           <StepPanel activeKey={activeStep.key} direction={direction}>
             {activeStep.key === "personal" && (
-              <PersonalStep value={personal} onChange={handlePersonalChange} />
+              <PersonalStep
+                value={personal}
+                onChange={handlePersonalChange}
+                experience={experience}
+                skills={skills}
+              />
             )}
             {activeStep.key === "experience" && (
               <ExperienceStep items={experience} onChange={setExperience} personalInfoId={personalInfoId} autoSave={autoSave} />
@@ -804,12 +809,48 @@ function StepHeading({ title, hint }: { title: string; hint: string }) {
 function PersonalStep({
   value,
   onChange,
+  experience,
+  skills,
 }: {
   value: PersonalInfo;
   onChange: (v: PersonalInfo) => void;
+  experience?: Experience[];
+  skills?: Skill[];
 }) {
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const set = <K extends keyof PersonalInfo>(key: K, v: PersonalInfo[K]) =>
     onChange({ ...value, [key]: v });
+
+  const handleAiGenerate = async () => {
+    setGeneratingAi(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/generate-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: value.title,
+          fullName: value.fullName,
+          summary: value.summary,
+          experiences: experience,
+          skills: skills,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate summary");
+      }
+      if (data.summary) {
+        set("summary", data.summary);
+      }
+    } catch (err: any) {
+      setAiError(err.message || "Failed to generate summary");
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs">
@@ -851,15 +892,48 @@ function PersonalStep({
             onChange={(e) => set("location", e.target.value)}
           />
         </Field>
-        <div className="sm:col-span-2">
-          <Field label="Professional Summary" hint="2–4 sentences describing your background">
-            <TextArea
-              rows={4}
-              placeholder="Results-driven professional with 5+ years of experience in..."
-              value={value.summary}
-              onChange={(e) => set("summary", e.target.value)}
-            />
-          </Field>
+        <div className="sm:col-span-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-xs font-semibold text-slate-700">
+                Professional Summary *
+              </label>
+              <p className="text-[11px] text-slate-400 font-normal">
+                2–4 sentences describing your background
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAiGenerate}
+              disabled={generatingAi}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl shadow-xs shadow-violet-500/20 disabled:opacity-60 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              {generatingAi ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  <span>Generating with Gemini…</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>AI Generate</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <TextArea
+            rows={4}
+            placeholder="Results-driven professional with 5+ years of experience in..."
+            value={value.summary}
+            onChange={(e) => set("summary", e.target.value)}
+          />
+
+          {aiError && (
+            <p className="text-xs font-medium text-rose-500 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+              {aiError}
+            </p>
+          )}
         </div>
       </FadeIn>
     </div>
